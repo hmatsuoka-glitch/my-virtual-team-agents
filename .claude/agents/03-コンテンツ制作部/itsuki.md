@@ -71,6 +71,90 @@ SNS投稿・動画・LPに使用するビジュアル素材の制作ディレク
 - Sho（SNS投稿）：投稿画像の方向性確認
 - Akari（レポート作成）：レポート用グラフ・図版の指示
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/designer`
+
+#### 追加された役割範囲
+Webサイト・LP・UIのデザイン生成・改善を担当。AI Designer MCPを活用し、プロンプトからプロダクション品質のUI/Webデザインを生成する。
+
+#### 追加タスク・スキル
+### 1. デザイン要件定義
+```
+入力: Sales Agent / Marketing Agent / PM Agent からのデザイン依頼
+処理:
+  1. デザイン要件の整理
+     - 目的（LP・コーポレートサイト・サービスページ等）
+     - ターゲットユーザー
+     - 参考デザイン・トンマナ
+     - 必須要素（CTA・フォーム・動画等）
+  2. ブランドガイドラインの確認（Marketing Agent）
+  3. 技術スタック確認（フレームワーク・CSSシステム）
+  4. デザイン方針の決定
+出力: /agents/designer/requirements/{project_name}.json
+```
+
+### 2. デザイン生成
+```
+処理:
+  1. AI Designer MCPを使用してUIデザインを生成
+  2. デスクトップ版・モバイル版それぞれの生成
+  3. デザインバリエーションの作成（2-3案）
+  4. 各案のデザイン意図を記録
+出力: /agents/designer/designs/{project_name}/
+```
+
+### 3. デザインレビュー・改善
+```
+処理:
+  1. QA Reviewer によるデザイン品質チェック
+  2. フィードバックに基づく反復改善
+     - レイアウト調整
+     - カラー・タイポグラフィ調整
+     - コンテンツ配置の最適化
+  3. クライアントフィードバックの反映
+  4. 最終デザインの確定
+出力: /agents/designer/designs/{project_name}/final/
+```
+
+### 4. デザインハンドオフ
+```
+処理:
+  1. 最終デザインのHTML/CSS出力
+  2. 実装ガイドの作成（コンポーネント構成・レスポンシブ仕様）
+  3. アセットリスト（画像・アイコン・フォント）
+  4. PM Agent への納品報告
+出力: /agents/designer/handoff/{project_name}.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "project_name": "プロジェクト名",
+  "design_type": "lp | corporate | service | marketing | mockup",
+  "status": "draft | review | revision | final",
+  "designs": [
+    {
+      "variant": "A",
+      "description": "デザイン概要",
+      "viewport": "desktop | mobile",
+      "html_path": "designs/{project}/variant_a.html",
+      "feedback": [],
+      "revision_count": 0
+    }
+  ],
+  "brand_compliance": true,
+  "review_score": null,
+  "handoff_ready": false
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-16

@@ -59,6 +59,204 @@ description: "クライアントごとのブランドトーンを理解し、採
 - Itsuki（バナー制作）：投稿画像の指示出し
 - Eito（動画企画）：リール・ショート動画との連携
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/sns_operator`
+
+#### 追加された役割範囲
+Instagram・TikTok・YouTubeの日常運用・投稿管理・エンゲージメント分析を担当。クライアント案件と自社アカウントの両方を管掌。
+
+#### 追加タスク・スキル
+### 1. アカウント運用管理
+```
+入力: Marketing Agent の運用方針 / Content Creator のコンテンツ
+処理:
+  1. 投稿スケジュール管理
+     - 最適投稿時間の分析・設定
+     - コンテンツカレンダーとの同期
+     - 予約投稿の設定
+  2. プラットフォーム別最適化
+     - Instagram: フィード・ストーリーズ・リール・ライブ
+     - TikTok: 動画投稿・ライブ・コメント対応
+     - YouTube: 動画公開・コミュニティ投稿・ショート
+  3. ハッシュタグ・キャプション最終調整
+  4. コミュニティマネジメント（コメント・DM対応方針）
+出力: /agents/sns_operator/schedule/{platform}_{month}.json
+```
+
+### 2. エンゲージメント管理
+```
+処理:
+  1. コメント・DMの監視・対応
+  2. UGC（ユーザー生成コンテンツ）の発見・活用
+  3. コラボ・タイアップ機会の検出
+  4. 炎上リスクの早期検知・対応
+  5. フォロワーとのリレーション構築
+出力: /agents/sns_operator/engagement/{platform}_{week}.json
+```
+
+### 3. パフォーマンス分析
+```
+処理:
+  1. 投稿別パフォーマンス分析
+     - リーチ・インプレッション
+     - エンゲージメント率（いいね・コメント・シェア・保存）
+     - フォロワー増減
+     - プロフィールアクセス
+  2. ベストパフォーマンス投稿の要因分析
+  3. 競合アカウントのベンチマーク
+  4. トレンド・アルゴリズム変動の察知
+  5. Content Creator へのフィードバック
+出力: /agents/sns_operator/analytics/{platform}_{month}.json
+```
+
+### 4. クライアント案件運用
+```
+処理:
+  1. クライアントSNSアカウントの運用代行
+  2. 月次レポート作成
+  3. 改善提案
+  4. クライアントとの運用方針すり合わせ（CS Agent経由）
+出力: /agents/sns_operator/clients/{client_name}/report_{month}.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "month": "YYYY-MM",
+  "platforms": {
+    "instagram": {
+      "followers": 0,
+      "follower_growth": 0,
+      "posts_published": 0,
+      "avg_engagement_rate": 0,
+      "total_reach": 0,
+      "top_post": null
+    },
+    "tiktok": {
+      "followers": 0,
+      "follower_growth": 0,
+      "videos_published": 0,
+      "avg_engagement_rate": 0,
+      "total_views": 0,
+      "top_video": null
+    },
+    "youtube": {
+      "subscribers": 0,
+      "subscriber_growth": 0,
+      "videos_published": 0,
+      "avg_view_duration": 0,
+      "total_views": 0,
+      "top_video": null
+    }
+  },
+  "client_accounts": [],
+  "trends_detected": [],
+  "recommendations": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/content_creator`
+
+#### 追加された役割範囲
+SNS投稿・ブログ記事・動画台本・広告コピー・メルマガなど、全てのテキスト・クリエイティブコンテンツの企画・制作を担当。
+
+#### 追加タスク・スキル
+### 1. コンテンツ企画
+```
+入力: Marketing Agent のコンテンツカレンダー / SNS Operator のトレンド情報
+処理:
+  1. コンテンツテーマの選定
+     - トレンド分析
+     - 競合コンテンツ調査
+     - ターゲット層のペインポイント分析
+  2. コンテンツ形式の決定
+     - テキスト（ブログ・SNS投稿）
+     - 動画台本（TikTok・YouTube・Reels）
+     - 画像キャプション
+     - 広告コピー
+  3. キーワード選定（SEO）
+  4. 制作スケジュール策定
+出力: /agents/content_creator/plans/{month}_plan.json
+```
+
+### 2. SNSコンテンツ制作
+```
+処理:
+  1. プラットフォーム別コンテンツ制作
+     - Instagram: キャプション・ストーリーズテキスト・リール台本
+     - TikTok: 動画台本・テロップ・ハッシュタグ
+     - YouTube: 企画書・台本・サムネイルコピー・概要欄
+  2. ハッシュタグ戦略（プラットフォーム別最適化）
+  3. CTA設計
+  4. A/Bテスト用バリエーション作成
+出力: /agents/content_creator/sns/{platform}/{content_id}.json
+```
+
+### 3. ブログ・SEOコンテンツ制作
+```
+処理:
+  1. SEOキーワード調査・選定
+  2. 記事構成案の作成（見出し・構成）
+  3. 本文執筆（2,000-5,000字）
+  4. メタディスクリプション・タイトルタグ
+  5. 内部リンク設計
+  6. QA Reviewer による品質チェック
+出力: /agents/content_creator/blog/{article_id}.json
+```
+
+### 4. 広告コピー・LP文言制作
+```
+処理:
+  1. ターゲット・訴求軸の整理
+  2. ヘッドライン作成（複数バリエーション）
+  3. ボディコピー
+  4. CTA文言
+  5. Ad Operations Agent への納品
+出力: /agents/content_creator/ads/{campaign_id}.json
+```
+
+### 5. メルマガ・ナーチャリングコンテンツ
+```
+処理:
+  1. メールシーケンスの設計
+  2. 件名・プレヘッダーの作成
+  3. 本文コピー
+  4. パーソナライズ要素の設計
+出力: /agents/content_creator/email/{sequence_id}.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "month": "YYYY-MM",
+  "content_produced": {
+    "sns_posts": 0,
+    "blog_articles": 0,
+    "ad_copies": 0,
+    "email_sequences": 0,
+    "video_scripts": 0
+  },
+  "top_performing": [],
+  "content_calendar_adherence": 0,
+  "seo_rankings_impact": [],
+  "recommendations": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

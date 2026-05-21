@@ -77,6 +77,109 @@ description: "クライアントの採用広告（Airwork・Indeed・SNS等）�
 - Shun（データ分析）：Airworkデータの詳細分析依頼
 - Haruto（経営企画）：KPI目標との照合
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/ad_operations`
+
+#### 追加された役割範囲
+Google広告・Meta広告・TikTok広告・YouTube広告の出稿・運用・最適化を担当。Marketing Agentの戦略に基づき、広告の実行と効果最大化を管掌。
+
+#### 追加タスク・スキル
+### 1. キャンペーン設計
+```
+入力: Marketing Agent の広告戦略 / Content Creator の広告コピー / Designer Agent のクリエイティブ
+処理:
+  1. キャンペーン構成設計
+     - 目的設定（認知・検討・コンバージョン）
+     - ターゲティング設計（デモグラ・興味関心・カスタムオーディエンス）
+     - 予算配分・入札戦略
+  2. 広告セット・広告グループの構成
+  3. クリエイティブのプラットフォーム別最適化
+  4. トラッキング設定（UTMパラメータ・コンバージョンタグ）
+  5. A/Bテスト設計
+出力: /agents/ad_operations/campaigns/{campaign_id}/setup.json
+```
+
+### 2. 日次運用・最適化
+```
+処理:
+  1. 予算消化ペースの監視
+  2. パフォーマンス指標の日次チェック
+     - CPC / CPM / CTR / CVR / CPA / ROAS
+  3. 入札調整・予算再配分
+  4. パフォーマンス低下広告の停止判断
+  5. 勝ちクリエイティブの拡張
+  6. 新規オーディエンスのテスト
+出力: /agents/ad_operations/daily/{date}.json
+```
+
+### 3. クリエイティブ管理
+```
+処理:
+  1. クリエイティブパフォーマンスの分析
+  2. クリエイティブ疲弊の検知
+  3. 新規クリエイティブの発注（→ Content Creator / Designer）
+  4. A/Bテスト結果の集計・判定
+  5. 勝ちパターンのナレッジ蓄積
+出力: /agents/ad_operations/creative_report/{month}.json
+```
+
+### 4. レポーティング・分析
+```
+処理:
+  1. 週次パフォーマンスレポート
+  2. 月次決算レポート（→ Finance Agent）
+  3. プラットフォーム別ROI分析
+  4. アトリビューション分析
+  5. 改善提案・次月施策の策定
+出力: /agents/ad_operations/reports/{month}_report.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "month": "YYYY-MM",
+  "total_spend": 0,
+  "total_conversions": 0,
+  "overall_roas": 0,
+  "overall_cpa": 0,
+  "platforms": {
+    "google_ads": {
+      "spend": 0,
+      "impressions": 0,
+      "clicks": 0,
+      "conversions": 0,
+      "cpa": 0,
+      "roas": 0
+    },
+    "meta_ads": {},
+    "tiktok_ads": {},
+    "youtube_ads": {}
+  },
+  "campaigns": [
+    {
+      "id": "campaign_id",
+      "name": "キャンペーン名",
+      "platform": "google_ads",
+      "objective": "conversion",
+      "spend": 0,
+      "results": 0,
+      "cpa": 0,
+      "roas": 0,
+      "status": "active | paused | completed"
+    }
+  ],
+  "ab_tests": [],
+  "recommendations": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

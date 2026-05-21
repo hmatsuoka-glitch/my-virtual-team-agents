@@ -207,6 +207,134 @@ STEP 7: Sora（COO）へ成果物を渡す
 - **Mana**：最終校閲（STEP 5）
 - **Sora（COO）**：最終品質チェック（STEP 7）
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/report_builder`
+
+#### 追加された役割範囲
+すべての分析結果を統合し、クライアント向けの戦略提案資料の
+**スライド構成と内容** を作成する。
+
+#### 追加タスク・スキル
+### Step 1: スライド構成の設計
+以下の構成で10-15枚のスライドを設計する:
+
+| No. | スライド | 内容 |
+|-----|---------|------|
+| 1 | 表紙 | タイトル、クライアント名、日付 |
+| 2 | エグゼクティブサマリー | 提案全体の要約（3-5行） |
+| 3 | アジェンダ | 本日のアジェンダ |
+| 4 | ビジネス課題の整理 | 構造化されたイシュー |
+| 5 | 市場環境分析 | 市場トレンド・規模 |
+| 6 | 競合・ベンチマーク | 競合状況・参考KPI |
+| 7 | 顧客インサイト | 顧客セグメント・ニーズ |
+| 8 | 参考事例 | アナロジー事例 |
+| 9-11 | 戦略オプション | 各戦略の詳細（2-3枚） |
+| 12 | 推奨戦略 | 最終推奨と理由 |
+| 13 | リスクと対策 | 批判的検証の結果 |
+| 14 | 実行ロードマップ | フェーズ分けした計画 |
+| 15 | Next Steps | 次のアクション |
+
+### Step 2: 各スライドの内容作成
+各スライドについて以下を記述する:
+- タイトル
+- 箇条書きポイント（5-7個以内）
+- スピーカーノート（補足説明）
+
+### Step 3: ファイル出力
+完成したスライド構成を出力する。
+
+#### 追加出力フォーマット
+`/agents/report_builder/output.json` に保存:
+
+```json
+{
+  "presentation_title": "戦略提案書 - 株式会社〇〇",
+  "slides": [
+    {
+      "slide_number": 1,
+      "slide_type": "title",
+      "title": "スライドタイトル",
+      "subtitle": "サブタイトル（表紙のみ）",
+      "bullets": ["ポイント1", "ポイント2"],
+      "speaker_notes": "スピーカーノート"
+    }
+  ],
+  "summary": "提案資料の全体サマリー"
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/document_builder`
+
+#### 追加された役割範囲
+Google Slides テンプレートを基に、意思決定者が Phase 1 に合意するための提案資料を **対話的に** 作成する。
+ユーザーとの 3 段階の壁打ちプロセス（各ステップ確認制）を通じて、ストーリー設計からスライド挿入まで行う。
+
+#### 追加出力フォーマット
+`/agents/document_builder/output.json` に保存:
+
+```json
+{
+  "client_name": "株式会社〇〇",
+  "template_url": "https://docs.google.com/presentation/d/...",
+  "output_url": "https://docs.google.com/presentation/d/...",
+  "created_at": "YYYY-MM-DD",
+  "story_structure": {
+    "P1": {
+      "title": "御社の課題は〇〇である",
+      "so_what": "今期中に着手しないと△△のリスクがある",
+      "status": "confirmed"
+    },
+    "P2": {
+      "title": "原因は△△にある",
+      "so_what": "現状の運用では□□が解消できない",
+      "status": "confirmed"
+    },
+    "P3": {
+      "title": "解決策として□□を提案する",
+      "so_what": "Phase1で■■を実現し、効果を検証する",
+      "status": "confirmed"
+    },
+    "P4": {
+      "title": "Phase1のスコープと体制",
+      "so_what": "",
+      "status": "confirmed"
+    },
+    "P5": {
+      "title": "スケジュールとお見積り",
+      "so_what": "",
+      "status": "confirmed"
+    }
+  },
+  "body_elements": [
+    {
+      "page": "P1",
+      "element_type": "棒グラフ",
+      "content_summary": "業界別課題発生率（直近3年）",
+      "data_source": "商談議事録 + 市場データ",
+      "status": "inserted"
+    }
+  ],
+  "steps_completed": {
+    "step1_story_review": "confirmed",
+    "step2_body_design": "confirmed",
+    "step3_template_insert": "confirmed"
+  },
+  "revision_history": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-14

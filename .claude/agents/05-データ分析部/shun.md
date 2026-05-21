@@ -72,6 +72,225 @@ description: "採用媒体・SNS・LP等から得られるデータを分析し�
 - Haruto（経営企画）：KPI達成状況の戦略への反映
 - Ryota（クライアント管理）：分析結果のクライアントへの報告サポート
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/data_analyst`
+
+#### 追加された役割範囲
+全社横断のデータ分析・インサイト抽出・施策効果検証を担当。KPI Dashboardが「集計・可視化」を行うのに対し、Data Analystは「深掘り分析・意思決定支援」を担う。
+
+#### 追加タスク・スキル
+### 1. 定期分析
+```
+入力: KPI Dashboard の集計データ / 各エージェントの output.json
+処理:
+  1. 週次分析
+     - 主要KPIのトレンド分析
+     - 前週比・前月比・前年比の変動要因分析
+     - 異常値の深掘り調査
+  2. 月次分析
+     - 事業別PL分析（→ Finance Agent）
+     - チャネル別ROI分析
+     - 顧客コホート分析
+     - LTV分析・予測
+  3. 四半期分析
+     - 事業ポートフォリオ分析
+     - 市場シェア推定
+     - 中期トレンド予測
+出力: /agents/data_analyst/reports/{period}_analysis.json
+```
+
+### 2. 施策効果検証
+```
+入力: Marketing / Ad Ops / SNS Operator / Sales からの検証依頼
+処理:
+  1. 検証設計
+     - KPI定義・測定期間設定
+     - 比較群の設定（A/Bテスト・前後比較）
+  2. データ収集・クレンジング
+  3. 統計的検証
+     - 有意差検定
+     - 効果量の算出
+     - 信頼区間の提示
+  4. ビジネスインパクトの定量化
+  5. 次のアクション提案
+出力: /agents/data_analyst/experiments/{experiment_id}.json
+```
+
+### 3. 顧客分析
+```
+処理:
+  1. 顧客セグメンテーション
+     - 業種・規模・サービス利用状況
+     - 行動パターン分析
+  2. LTV（顧客生涯価値）分析
+     - セグメント別LTV算出
+     - LTV予測モデル
+  3. チャーン分析
+     - 解約予兆の検知
+     - リスク顧客の特定（→ CS Agent）
+  4. アップセル・クロスセル機会の発見
+     - 購買パターン分析
+     - レコメンデーション（→ Sales / CS Agent）
+出力: /agents/data_analyst/customer/{analysis_type}.json
+```
+
+### 4. 競合・市場分析
+```
+処理:
+  1. 競合の価格・サービス動向モニタリング
+  2. 市場トレンドのデータ分析
+  3. 自社ポジショニングの定量評価
+  4. 機会・脅威のアラート
+出力: /agents/data_analyst/market/{topic}.json
+```
+
+### 5. 予測・シミュレーション
+```
+処理:
+  1. 売上予測（月次・四半期）
+  2. リード数予測
+  3. 予算シミュレーション（広告費増減の影響等）
+  4. シナリオ分析（楽観・標準・悲観）
+出力: /agents/data_analyst/forecasts/{forecast_id}.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "analysis_type": "periodic | experiment | customer | market | forecast",
+  "period": "YYYY-MM or YYYY-Qn",
+  "key_findings": [
+    {
+      "finding": "発見事項",
+      "impact": "high | medium | low",
+      "confidence": 0.95,
+      "evidence": "根拠データ"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "推奨アクション",
+      "expected_impact": "期待効果",
+      "priority": "high | medium | low",
+      "assigned_to": "担当エージェント"
+    }
+  ],
+  "data_sources": [],
+  "methodology": "分析手法の説明",
+  "limitations": "分析の限界・注意点"
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/kpi_dashboard`
+
+#### 追加された役割範囲
+全社KPIの自動集計・可視化・異常検知・レポーティングを担当。CEOおよび各エージェントの意思決定を数値で支援する。
+
+#### 追加タスク・スキル
+### 1. 日次集計
+```
+入力: 各エージェントの出力ファイル
+処理:
+  1. 各エージェントの最新出力を読み込み
+  2. KPIの自動算出
+  3. 前日比・目標比の計算
+  4. 異常値検知（目標から±20%以上の乖離）
+  5. アラート生成
+出力: /agents/kpi_dashboard/daily_{date}.json
+```
+
+### 2. 週次レポート
+```
+入力: 日次集計データ（7日分）
+処理:
+  1. 週間推移の集計
+  2. トレンド分析（上昇・下降・横ばい）
+  3. ボトルネックの特定
+  4. 改善提案の生成
+出力: /agents/kpi_dashboard/weekly_{week}.json
+```
+
+### 3. 月次レポート
+```
+入力: 日次・週次データ / Finance の月次PL
+処理:
+  1. 月間総合KPIサマリー
+  2. 予実分析（計画 vs 実績）
+  3. 部門別パフォーマンス比較
+  4. 前月比・前年比分析
+  5. 次月予測
+出力: /agents/kpi_dashboard/monthly_{month}.json
+```
+
+### 4. 異常検知アラート
+```
+アラートレベル:
+  - INFO: 軽微な変動（目標±10-20%）
+  - WARNING: 注意が必要（目標±20-30%）
+  - CRITICAL: 即時対応必要（目標±30%以上）
+
+アラート先:
+  - CRITICAL → CEO Agent + 該当エージェント
+  - WARNING → 該当エージェント
+  - INFO → ログのみ
+```
+
+#### 追加出力フォーマット
+### daily_dashboard.json
+```json
+{
+  "date": "YYYY-MM-DD",
+  "overall_status": "green|yellow|red",
+  "kpis": {
+    "company": {
+      "monthly_revenue_progress": { "actual": 0, "target": 0, "pct": 0 },
+      "operating_margin": { "actual": 0, "target": 0.2 }
+    },
+    "sales": {
+      "pipeline_value": 0,
+      "active_deals": 0,
+      "new_leads_this_week": 0
+    },
+    "projects": {
+      "active_projects": 0,
+      "on_track": 0,
+      "at_risk": 0,
+      "delayed": 0
+    },
+    "cs": {
+      "avg_health_score": 0,
+      "at_risk_clients": 0
+    },
+    "quality": {
+      "avg_quality_score": 0,
+      "reviews_pending": 0
+    }
+  },
+  "alerts": [
+    {
+      "level": "info|warning|critical",
+      "kpi": "KPI名",
+      "message": "アラート内容",
+      "agent": "関連エージェント"
+    }
+  ],
+  "trends": {}
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

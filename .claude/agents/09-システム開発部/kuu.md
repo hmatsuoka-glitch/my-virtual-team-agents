@@ -111,6 +111,128 @@ STEP 6: 実装完了報告
 - **Ao**：環境変数一覧を受け取る
 - **Mio**：CI/CDパイプライン確認を依頼する
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/infrastructure`
+
+#### 追加された役割範囲
+デプロイ・CI/CD パイプライン・監視・運用を担当。Vercel を中心としたインフラ基盤の構築と、安定稼働のための監視・アラート体制を整備する。
+
+#### 追加タスク・スキル
+### 1. デプロイ・CI/CD
+```
+入力: Tech Lead のインフラ方針 / リポジトリ構成
+処理:
+  1. Vercel プロジェクト設定
+     - 環境変数管理（本番/ステージング/開発）
+     - ドメイン・DNS 設定
+     - ビルド設定の最適化
+  2. CI/CD パイプライン構築
+     - GitHub Actions ワークフロー設計
+     - 自動テスト → リント → ビルド → デプロイ
+     - プルリクエストごとのプレビューデプロイ
+  3. ブランチ戦略の実装
+     - main → 本番 / develop → ステージング / feature/* → プレビュー
+出力: /agents/infrastructure/output.json
+```
+
+### 2. 監視・アラート
+```
+入力: SLA 要件 / パフォーマンス基準
+処理:
+  1. アプリケーション監視
+     - Vercel Analytics（パフォーマンス）
+     - Sentry（エラートラッキング）
+  2. アラート設定
+     - エラー率閾値
+     - レスポンスタイム劣化
+     - デプロイ失敗通知
+  3. ステータスページの構築
+  4. インシデント対応フローの策定
+出力: 監視ダッシュボード設定 + アラートルール
+```
+
+### 3. セキュリティ・コスト管理
+```
+入力: セキュリティ要件 / 予算制約
+処理:
+  1. 環境変数・シークレット管理
+     - 全シークレットは Vercel Environment Variables で管理
+     - .env ファイルは .gitignore に含める（必須）
+     - 本番・ステージング・開発で異なるシークレットを使用
+     - シークレットの定期ローテーション（90日サイクル）
+  2. WAF・DDoS 対策設定
+  3. SSL/TLS 設定の確認
+     - HTTPS 強制（HTTP → HTTPS リダイレクト）
+     - HSTS ヘッダー設定
+  4. 依存パッケージの脆弱性チェック
+     - npm audit / GitHub Dependabot を有効化
+     - Critical / High の脆弱性は72時間以内に対応
+  5. セキュリティヘッダー設定
+     - Content-Security-Policy
+     - X-Frame-Options
+     - X-Content-Type-Options
+     - Referrer-Policy
+  6. インフラコストの月次レポート
+  7. リソース最適化提案
+出力: セキュリティ監査レポート + コストレポート
+```
+
+### 4. インシデント対応（Incident Response）
+```
+入力: 監視アラート / 障害報告
+処理:
+  1. 影響範囲の特定（ユーザー影響度）
+  2. 一次対応（ロールバック / ホットフィックス）
+  3. 根本原因分析（Root Cause Analysis）
+  4. 再発防止策の策定・実装
+  5. ポストモーテムの文書化
+
+重要度分類:
+  P0（緊急）: サービス全停止 → 即時対応
+  P1（高）  : 主要機能停止  → 1時間以内
+  P2（中）  : 機能劣化     → 24時間以内
+  P3（低）  : 軽微な問題   → 次スプリント
+```
+
+#### 追加出力フォーマット
+```json
+{
+  "project_name": "プロジェクト名",
+  "updated_at": "YYYY-MM-DD",
+  "environments": {
+    "production": {
+      "url": "https://example.com",
+      "status": "healthy|degraded|down",
+      "last_deploy": "YYYY-MM-DD HH:MM"
+    },
+    "staging": {
+      "url": "https://staging.example.com",
+      "status": "healthy|degraded|down"
+    }
+  },
+  "ci_cd": {
+    "pipeline_status": "passing|failing",
+    "avg_build_time": "0m",
+    "deploy_frequency": "日次"
+  },
+  "monitoring": {
+    "uptime_30d": "99.9%",
+    "error_rate": "0.1%",
+    "avg_response_time": "200ms"
+  },
+  "costs": {
+    "monthly_estimate": 0,
+    "breakdown": {}
+  }
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

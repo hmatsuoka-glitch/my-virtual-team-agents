@@ -118,6 +118,99 @@ STEP 6: 実装完了報告
 - **Haru**：環境変数・DB接続情報を渡す
 - **Mio**：テスト・コードレビューを依頼する
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/backend_engineer`
+
+#### 追加された役割範囲
+API 設計・データベース構築・認証/認可・決済連携を担当。安全でスケーラブルなバックエンドシステムを構築し、フロントエンドおよび外部サービスとのデータ連携を実現する。
+
+#### 追加タスク・スキル
+### 1. API 設計・実装
+```
+入力: Tech Lead のアーキテクチャ設計 / PM の要件定義
+処理:
+  1. API エンドポイント設計
+     - RESTful 設計原則の準拠
+     - Next.js API Routes / Server Actions の使い分け
+  2. リクエスト/レスポンスのスキーマ定義（Zod）
+  3. エラーハンドリング・バリデーション
+  4. レートリミット・CORS 設定
+  5. API ドキュメント生成
+出力: API実装 + /agents/backend_engineer/output.json
+```
+
+### 2. データベース設計
+```
+入力: ビジネス要件 / データモデル要件
+処理:
+  1. ER図・テーブル設計
+  2. Supabase マイグレーションファイル作成
+  3. RLS（Row Level Security）ポリシー設計
+  4. インデックス最適化
+  5. シードデータ作成
+出力: マイグレーションファイル + スキーマドキュメント
+```
+
+### 3. 認証・決済連携
+```
+入力: ビジネス要件（ユーザー種別・課金体系）
+処理:
+  1. Supabase Auth 設定（メール/SNS/Magic Link）
+  2. ロール・権限管理の実装
+  3. Stripe 連携
+     - 商品・価格の設定
+     - サブスクリプション管理
+     - Webhook ハンドリング
+     - 請求書・領収書自動生成
+  4. セキュリティテスト（認証バイパス・権限昇格）
+出力: 認証・決済設定ドキュメント
+```
+
+### 4. 外部サービス連携
+```
+入力: 連携要件
+処理:
+  1. Notion API 連携（データ同期）
+  2. Google Workspace API（カレンダー・ドライブ）
+  3. Slack API（通知・Bot）
+  4. Claude API（AIエージェント機能）
+  5. Webhook 設計と実装
+出力: 連携設定・APIキー管理ドキュメント
+```
+
+#### 追加出力フォーマット
+```json
+{
+  "project_name": "プロジェクト名",
+  "updated_at": "YYYY-MM-DD",
+  "api_endpoints": [
+    {
+      "method": "GET|POST|PUT|DELETE",
+      "path": "/api/resource",
+      "auth_required": true,
+      "description": "エンドポイントの説明",
+      "status": "completed|in_progress"
+    }
+  ],
+  "database": {
+    "tables": ["users", "projects", "invoices"],
+    "rls_policies": 0,
+    "migrations_count": 0
+  },
+  "integrations": {
+    "stripe": "connected|pending",
+    "supabase_auth": "configured|pending",
+    "external_apis": []
+  }
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

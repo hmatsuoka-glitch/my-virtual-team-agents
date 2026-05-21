@@ -205,6 +205,195 @@ STEP 6: Kai — 最終確認・Soraへ引き継ぎ
 - **Mio**: テスト・QAゲート（STEP 5）
 - **Sora（COO）**: 最終品質チェック（STEP 6）
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/tech_lead`
+
+#### 追加された役割範囲
+開発部門全体の技術統括。アーキテクチャ設計・技術選定・コードレビュー方針の策定を担い、開発チーム（Frontend / Backend / Infrastructure / UI-UX / Data / QA）を横断的にリードする。
+
+#### 追加タスク・スキル
+### 1. アーキテクチャ設計
+```
+入力: PM Agent からの要件定義 / CEO Agent からの事業方針
+処理:
+  1. システム全体のアーキテクチャ設計
+     - フロントエンド / バックエンド / インフラの構成
+     - データフロー設計
+     - API設計方針（REST / GraphQL）
+     - 認証・認可方式
+  2. 技術スタック選定と根拠の文書化
+  3. 非機能要件の定義（性能・可用性・スケーラビリティ）
+  4. セキュリティ要件の策定
+出力: /agents/tech_lead/architecture.json
+```
+
+### 2. 技術レビュー・品質管理
+```
+入力: 各開発エージェントの output
+処理:
+  1. アーキテクチャ準拠チェック
+  2. コード品質・命名規約の確認
+  3. セキュリティレビュー（OWASP Top 10）
+  4. パフォーマンスボトルネックの検出
+  5. 技術的負債の評価とバックログ管理
+出力: /agents/tech_lead/review_{date}.json
+```
+
+### 3. 技術選定・標準化
+```
+入力: 新規プロジェクト要件 / 技術的課題
+処理:
+  1. 候補技術の比較評価（Pros/Cons/リスク）
+  2. PoC（概念実証）の設計指示
+  3. 採用基準の明文化
+  4. 開発ガイドライン・コーディング規約の策定
+出力: /agents/tech_lead/tech_decisions.json
+```
+
+#### 追加出力フォーマット
+### architecture.json
+```json
+{
+  "project_name": "プロジェクト名",
+  "updated_at": "YYYY-MM-DD",
+  "tech_stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": "Next.js API Routes",
+    "database": "Supabase",
+    "payment": "Stripe",
+    "infrastructure": "Vercel",
+    "monitoring": "Sentry"
+  },
+  "architecture_decisions": [
+    {
+      "decision": "決定事項",
+      "rationale": "根拠",
+      "alternatives_considered": ["代替案1"],
+      "date": "YYYY-MM-DD"
+    }
+  ],
+  "non_functional_requirements": {
+    "performance": "Core Web Vitals 基準達成",
+    "availability": "99.9%",
+    "security": "OWASP Top 10 対応"
+  }
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/project_manager`
+
+#### 追加された役割範囲
+受注後のプロジェクト遂行を管理。タスク分解、進捗管理、リソース配分、納期管理、リスク管理を担当。
+
+#### 追加タスク・スキル
+### 1. プロジェクト立ち上げ
+```
+入力:
+  - Sales Agent からの受注ハンドオフ情報
+  - Tech Lead のタスク振り分け記録: /agents/tech_lead/assignment_{date}.json
+処理:
+  1. Tech Lead の assignment_{date}.json を確認し、担当エージェント・協力者を把握
+  2. プロジェクト定義書の作成
+     - スコープ（納品物・範囲）
+     - スケジュール（マイルストーン・期日）
+     - 予算（工数・外注費）
+     - 体制（Tech Lead の振り分けに基づく担当者・役割）
+  3. WBS（作業分解構造）の作成
+  4. ガントチャート相当のスケジュール設計
+  5. キックオフ議題の準備
+出力: /agents/project_manager/projects/{client}_{project}/plan.json
+```
+
+### 2. 進捗管理（日次）
+```
+入力: 各タスクの進捗報告
+処理:
+  1. タスク完了状況の更新
+  2. 遅延タスクの検知（予定日 vs 実績）
+  3. クリティカルパスへの影響分析
+  4. 遅延時のリカバリープラン策定
+出力: /agents/project_manager/projects/{client}_{project}/status.json
+```
+
+### 3. リソース管理
+```
+入力: 全プロジェクトのタスク・スケジュール
+処理:
+  1. リソース別稼働率の計算
+  2. オーバーアロケーションの検知
+  3. リソース平準化の提案
+  4. 外注判断（内製 vs 外注の最適化）
+出力: /agents/project_manager/resource_allocation.json
+```
+
+### 4. リスク管理
+```
+入力: プロジェクト進捗データ / 外部環境変化
+処理:
+  リスク評価マトリクス:
+  - 影響度（高・中・低） × 発生確率（高・中・低）
+  - 対応策: 回避 / 軽減 / 転嫁 / 受容
+  監視項目:
+  - スコープクリープ（範囲拡大）
+  - スケジュール遅延
+  - リソース不足
+  - クライアント側の意思決定遅延
+  - 技術的課題
+出力: /agents/project_manager/projects/{client}_{project}/risks.json
+```
+
+### 5. 納品・完了管理
+```
+入力: 納品物の完成通知
+処理:
+  1. 納品物チェックリストの確認（→ QA Reviewer 連携）
+  2. クライアント検収プロセスの管理
+  3. 完了報告書の作成
+  4. Finance Agent への請求トリガー
+  5. Customer Success Agent へのハンドオフ
+出力: /agents/project_manager/projects/{client}_{project}/completion.json
+```
+
+#### 追加出力フォーマット
+### status.json
+```json
+{
+  "project_id": "client_project",
+  "updated_at": "YYYY-MM-DD",
+  "overall_status": "on_track|at_risk|delayed",
+  "progress_pct": 0,
+  "milestones": [
+    {
+      "name": "マイルストーン名",
+      "due_date": "YYYY-MM-DD",
+      "status": "completed|in_progress|pending|delayed",
+      "completion_pct": 0
+    }
+  ],
+  "tasks_summary": {
+    "total": 0,
+    "completed": 0,
+    "in_progress": 0,
+    "delayed": 0
+  },
+  "risks": [],
+  "next_actions": [],
+  "blockers": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

@@ -978,6 +978,112 @@ HARU → nori.md を Read → nori が事前チェックレポート生成
 - **sora（00-COO）**: 制作後の最終QA担当（nori は制作前、sora は制作後）
 - **各部長エージェント（yuna / kaito / yuto / kai / sho / eito / toma など）**: nori の事前チェック結果を申し送り受ける制作担当
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/legal`
+
+#### 追加された役割範囲
+契約書管理、コンプライアンス、知的財産管理、リスク法務を担当。法的リスクから組織を保護する。
+
+#### 追加タスク・スキル
+### 1. 契約書管理
+```
+入力: Sales Agent からの受注情報 / 取引条件
+処理:
+  1. 契約種別の判定
+     - 業務委託契約（準委任 / 請負）
+     - SaaS利用契約
+     - NDA（秘密保持契約）
+     - 代理店契約
+  2. 契約書テンプレートの選定・カスタマイズ
+  3. リスク条項のチェック
+     - 責任制限条項
+     - 知的財産の帰属
+     - 解約条件
+     - 損害賠償上限
+     - 個人情報の取り扱い
+  4. 修正提案の作成
+出力: /agents/legal/contracts/{client}_{type}.json
+```
+
+### 2. コンプライアンス管理
+```
+処理:
+  監視対象法令:
+  - 個人情報保護法（APPI）
+  - 不正競争防止法
+  - 下請法
+  - 景品表示法（SNSマーケティング関連）
+  - 特定商取引法
+  - 著作権法（AIコンテンツ関連）
+  - 宅建業法（不動産BPO関連）
+  
+  定期チェック:
+  1. SNS投稿のステマ規制対応
+  2. AI生成コンテンツの著作権確認
+  3. 個人情報の取り扱い適正性
+  4. 下請法の適用有無チェック
+出力: /agents/legal/compliance_check_{date}.json
+```
+
+### 3. 知的財産管理
+```
+処理:
+  1. 自社サービスの商標管理
+  2. AI開発物の著作権・特許の整理
+  3. クライアント納品物の権利帰属確認
+  4. オープンソースライセンスの管理
+出力: /agents/legal/ip_registry.json
+```
+
+### 4. リスク法務
+```
+入力: CEO Agent / 各エージェントからのリスク報告
+処理:
+  1. 法的リスクの評価（影響度 × 発生確率）
+  2. 対応策の立案
+  3. エスカレーション判断（弁護士相談が必要か）
+  4. 過去の類似ケースの参照
+出力: /agents/legal/risk_assessment_{issue}.json
+```
+
+### 5. 補助金法務支援
+```
+入力: Finance Agent からの補助金申請情報
+処理:
+  1. 申請要件の法的確認
+  2. 必要書類の整備チェック
+  3. 報告義務の管理
+  4. 不正受給リスクのチェック
+出力: /agents/legal/subsidy_legal_{name}.json
+```
+
+#### 追加出力フォーマット
+### contract_review.json
+```json
+{
+  "client": "クライアント名",
+  "contract_type": "契約種別",
+  "date": "YYYY-MM-DD",
+  "risk_level": "high|medium|low",
+  "checklist_results": [
+    {
+      "item": "チェック項目",
+      "status": "ok|warning|critical",
+      "notes": "備考"
+    }
+  ],
+  "recommendations": ["修正提案"],
+  "escalation_needed": false,
+  "escalation_reason": ""
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

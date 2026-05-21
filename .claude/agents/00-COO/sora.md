@@ -94,6 +94,46 @@ STEP 4: 差し戻し後の再チェック
 - **全エージェント**：問題検出時に差し戻し先となる
 - **Kaito（07-LP複製部）**：LP複製案件の最終成果物を受け取る
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/qa_reviewer`
+
+#### 追加された役割範囲
+全エージェントの出力を横断的にレビューし、品質基準を満たしているかを検証する。問題があれば差し戻し指示を出し、組織全体のアウトプット品質を保証する。
+
+#### 追加出力フォーマット
+### review.json
+```json
+{
+  "reviewed_agent": "エージェント名",
+  "reviewed_file": "ファイルパス",
+  "date": "YYYY-MM-DD",
+  "quality_score": 0,
+  "judgment": "excellent|good|needs_work|critical",
+  "common_criteria": {
+    "completeness": {"pass": true, "notes": ""},
+    "accuracy": {"pass": true, "notes": ""},
+    "consistency": {"pass": true, "notes": ""},
+    "feasibility": {"pass": true, "notes": ""},
+    "format_compliance": {"pass": true, "notes": ""}
+  },
+  "specific_criteria": [],
+  "issues": [
+    {
+      "severity": "high|medium|low",
+      "description": "問題の説明",
+      "recommendation": "改善提案"
+    }
+  ],
+  "approved": true
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15
