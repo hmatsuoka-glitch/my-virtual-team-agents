@@ -127,6 +127,202 @@ export const HERO = {
 - **Ren**：STEP 1は並列で骨格生成、設計書完成後に詳細実装を引き渡す
 - **Kaito**：設計書の完成報告・進行確認
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/ui_ux_designer`
+
+#### 追加された役割範囲
+デザインシステムの構築・ワイヤーフレーム設計・ユーザビリティ改善を担当。Figma を活用してデザインを作成し、Frontend Engineer へのデザインハンドオフを行う。
+
+#### 追加タスク・スキル
+### 1. デザインシステム構築
+```
+入力: ブランドガイドライン / Tech Lead の技術方針
+処理:
+  1. デザイントークン定義
+     - カラーパレット（Primary / Secondary / Neutral / Semantic）
+     - タイポグラフィ（フォント・サイズ・ウェイト）
+     - スペーシング・ボーダーラジアス
+     - シャドウ・エレベーション
+  2. コンポーネントライブラリ設計
+     - ボタン / 入力フォーム / カード / モーダル / ナビゲーション
+     - 各コンポーネントの状態定義（default / hover / active / disabled / error）
+  3. Tailwind CSS 設定との整合性確保
+  4. Figma コンポーネントの Code Connect マッピング
+出力: /agents/ui_ux_designer/output.json
+```
+
+### 2. ワイヤーフレーム・UI設計
+```
+入力: PM の要件定義 / ユーザーストーリー
+処理:
+  1. ユーザーフロー設計（画面遷移図）
+  2. ワイヤーフレーム作成（Lo-Fi → Hi-Fi）
+  3. レスポンシブデザイン（モバイル / タブレット / デスクトップ）
+  4. インタラクション設計（アニメーション・トランジション）
+  5. Figma でのモックアップ・プロトタイプ作成
+出力: Figma デザインファイル URL + デザイン仕様書
+```
+
+### 3. ユーザビリティ改善
+```
+入力: ユーザーフィードバック / アナリティクスデータ
+処理:
+  1. ヒューリスティック評価
+  2. ユーザーフローの改善提案
+  3. コンバージョン率最適化（CTA配置・フォーム最適化）
+  4. A/Bテスト設計
+出力: UX改善レポート + 改善デザイン案
+```
+
+#### 追加出力フォーマット
+```json
+{
+  "project_name": "プロジェクト名",
+  "updated_at": "YYYY-MM-DD",
+  "design_system": {
+    "figma_url": "https://figma.com/...",
+    "tokens": {
+      "colors": {},
+      "typography": {},
+      "spacing": {}
+    },
+    "components_count": 0,
+    "code_connect_mapped": 0
+  },
+  "pages_designed": [
+    {
+      "page_name": "ページ名",
+      "figma_url": "https://figma.com/...",
+      "status": "wireframe|mockup|prototype|handoff",
+      "responsive": true
+    }
+  ]
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/web_builder_structure_analyzer`
+
+#### 追加された役割範囲
+参考サイトのHTML構造を詳細に解析し、セクション構成・ナビゲーション・レイアウトパターン・
+レスポンシブ設計を読み解く。Builder エージェントが正確にマークアップを再現できる
+設計図を作成する。
+
+#### 追加タスク・スキル
+### Step 1: 各ページのHTML取得と全体構造の把握
+`site_scanner/output.json` の `pages` 配列から各ページURLを取得し、
+`WebFetch` でHTMLを取得する。
+
+各ページについて以下を把握する:
+- `<header>`, `<main>`, `<footer>` の基本構造
+- `<section>` や `<div>` によるセクション分割
+- セクションの出現順序と数
+
+### Step 2: セクション単位の詳細解析
+各セクションについて以下を記録する:
+
+1. **セクションID/クラス名**: 識別に使える属性
+2. **セクションの役割**: hero / about / service / feature / CTA / FAQ / contact / testimonial 等
+3. **レイアウトパターン**:
+   - `full-width`: 全幅
+   - `contained`: max-width制限あり
+   - `two-column`: 2カラム（テキスト+画像等）
+   - `grid-3col`: 3カラムグリッド
+   - `grid-4col`: 4カラムグリッド
+   - `alternating`: 左右交互レイアウト
+4. **配置方法**: Flexbox / CSS Grid / 絶対配置
+5. **子要素の構成**: 見出し + テキスト + ボタン、カード x 3、画像 + テキスト 等
+6. **推定高さ**: 100vh / auto / 特定px値
+
+### Step 3: ナビゲーション構造の解析
+- ヘッダーナビゲーションの項目とリンク先
+- ナビゲーションの種類: fixed-top / sticky / static
+- モバイルハンバーガーメニューの有無
+- ドロップダウン/メガメニューの有無
+- CTAボタンの有無（「お問い合わせ」等）
+
+### Step 4: フッター構造の解析
+- カラム数と各カラムの内容
+- ロゴ・著作権表示の位置
+- SNSリンクの有無
+- サイトマップ的なリンク一覧
+
+### Step 5: 共通レイアウトパターンの抽出
+全ページを通じた共通パターンを抽出する:
+- コンテンツの最大幅（max-width）
+- セクション間のスペーシング
+- レスポンシブブレークポイント（768px, 1024px, 1280px 等）
+- ヘッダー高さ
+- 共通パディング
+
+### Step 6: ページ間の共通/固有要素の整理
+- 共通コンポーネント: Header, Footer, CTA Section 等
+- ページ固有のセクション構成
+
+#### 追加出力フォーマット
+`/agents/web_builder/structure_analyzer/output.json` に保存:
+
+```json
+{
+  "pages": [
+    {
+      "url": "https://example.com",
+      "page_role": "top",
+      "sections": [
+        {
+          "id": "hero",
+          "order": 1,
+          "role": "hero",
+          "layout": "full-width-centered",
+          "content_type": "hero_with_video_bg",
+          "children_summary": "h1 + p + 2x button",
+          "grid_or_flex": "flex-col-center",
+          "estimated_height": "100vh",
+          "background_type": "video | image | color | gradient",
+          "notes": "オーバーレイ付き動画背景"
+        },
+        {
+          "id": "features",
+          "order": 2,
+          "role": "feature",
+          "layout": "grid-3col",
+          "content_type": "icon_card_grid",
+          "children_summary": "section-heading + 3x card(icon + h3 + p)",
+          "grid_or_flex": "grid-cols-3",
+          "estimated_height": "auto",
+          "background_type": "color",
+          "notes": "各カードにアイコン付き"
+        }
+      ],
+      "navigation": {
+        "type": "fixed-top",
+        "items": [
+          {"label": "サービス", "href": "/service"},
+          {"label": "実績", "href": "/works"},
+          {"label": "会社概要", "href": "/about"},
+          {"label": "お問い合わせ", "href": "/contact", "is_cta": true}
+        ],
+        "has_hamburger_mobile": true,
+        "has_dropdown": false,
+        "logo_position": "left"
+      },
+      "footer": {
+        "columns": 4,
+        "content": ["会社情報", "サービス一覧", "お問い合わせ", "SNSリンク"],
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

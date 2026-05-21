@@ -118,6 +118,233 @@ STEP 5: レスポンシブ対応
 - **Mia**：完成コードを渡し忠実度チェックを受ける
 - **Kaito**：進行報告・差し戻し修正完了の報告
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/engineer`
+
+#### 追加された役割範囲
+LP・Webサイト・AIシステムの実装を担当。Designer Agentのデザインをコードに落とし込み、プロダクション品質のシステムを構築する。
+
+#### 追加タスク・スキル
+### 1. 技術設計
+```
+入力: Designer Agent のデザイン / PM Agent のプロジェクト要件
+処理:
+  1. 技術要件の整理
+     - フレームワーク選定
+     - アーキテクチャ設計
+     - API設計（必要な場合）
+     - インフラ構成
+  2. コンポーネント分解
+  3. 工数見積（→ Finance Agent / PM Agent）
+  4. 技術リスクの洗い出し
+出力: /agents/engineer/tech_design/{project_name}.json
+```
+
+### 2. 実装
+```
+処理:
+  1. 開発環境セットアップ
+  2. コンポーネント単位での実装
+     - HTML/CSS → コンポーネント化
+     - レスポンシブ対応
+     - アニメーション・インタラクション実装
+  3. バックエンド・API実装（必要な場合）
+  4. CMS連携・データ連携
+  5. フォーム・問い合わせ機能
+出力: ソースコード一式
+```
+
+### 3. テスト・品質保証
+```
+処理:
+  1. クロスブラウザテスト
+  2. レスポンシブ表示確認
+  3. パフォーマンス計測（Lighthouse）
+  4. アクセシビリティチェック
+  5. セキュリティチェック（OWASP基準）
+  6. SEO基本対策の確認
+出力: /agents/engineer/test_report/{project_name}.json
+```
+
+### 4. デプロイ・納品
+```
+処理:
+  1. ステージング環境へのデプロイ
+  2. クライアント確認・修正対応
+  3. 本番デプロイ
+  4. 監視設定・アラート設定
+  5. PM Agent への納品報告
+出力: /agents/engineer/deployment/{project_name}.json
+```
+
+#### 追加出力フォーマット
+### output.json
+```json
+{
+  "project_name": "プロジェクト名",
+  "tech_stack": {
+    "frontend": "Next.js / Tailwind CSS",
+    "backend": "なし or FastAPI",
+    "infrastructure": "Vercel",
+    "cms": "なし or microCMS"
+  },
+  "status": "design_review | in_development | testing | staging | deployed",
+  "progress_percent": 0,
+  "estimated_hours": 0,
+  "actual_hours": 0,
+  "lighthouse_scores": {
+    "performance": null,
+    "accessibility": null,
+    "best_practices": null,
+    "seo": null
+  },
+  "deploy_url": null,
+  "issues": [],
+  "next_actions": []
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/web_builder_builder`
+
+#### 追加された役割範囲
+全解析エージェント（Agent 0〜5）の出力を統合し、Next.js + Tailwind CSS で
+参考サイトを高再現度で実装する。イテレーション2以降では QA Reviewer の
+修正指示に基づいて改善を行う。
+
+#### 追加タスク・スキル
+### Step 1: プロジェクト初期化
+`/agents/web_builder/output/` に Next.js プロジェクトを作成する:
+
+```bash
+npx create-next-app@latest output --typescript --tailwind --app --src-dir --no-eslint --no-import-alias
+```
+
+**注意:** 既にプロジェクトが存在する場合（Iteration 2+）はこのステップをスキップ。
+
+### Step 2: 依存パッケージのインストール
+解析結果に基づいて必要なパッケージをインストール:
+
+```bash
+cd /agents/web_builder/output
+npm install framer-motion    # motion_analyzer で推奨された場合
+npm install lucide-react     # asset_collector で指定されたアイコンライブラリ
+npm install swiper           # interaction_analyzer でスライダーが検出された場合
+# その他、解析で必要と判断されたパッケージ
+```
+
+### Step 3: グローバル設定
+`design_analyzer/output.json` を基に以下を設定:
+
+**tailwind.config.ts:**
+- カラーパレットをカスタムカラーとして定義
+- フォントファミリーを定義
+- スペーシング・border-radius のカスタム値
+- ブレークポイント（必要に応じてカスタマイズ）
+
+**src/app/layout.tsx:**
+- Google Fonts の設定（`next/font/google`）
+- メタデータ設定
+- 共通レイアウト（Header + main + Footer）
+
+**src/app/globals.css:**
+- CSS変数の定義
+- ベースリセット・スタイル
+- スクロールバーのスタイル（必要に応じて）
+
+### Step 4: 共通コンポーネントの実装
+`structure_analyzer/output.json` の `shared_components` を基に:
+
+1. **Header コンポーネント** (`src/components/Header.tsx`):
+   - ナビゲーション項目の実装
+   - ロゴ配置
+   - モバイルハンバーガーメニュー（`interaction_analyzer` の仕様に従う）
+   - スクロール時のスタイル変化（`motion_analyzer` の仕様に従う）
+
+2. **Footer コンポーネント** (`src/components/Footer.tsx`):
+   - カラム構成の実装
+   - ロゴ・著作権・SNSリンク
+
+3. **その他共通コンポーネント**:
+   - SectionHeading: 共通の見出しパターン
+   - Button: プライマリ/セカンダリボタン
+   - Card: 共通カードコンポーネント
+   - Container: max-width ラッパー
+
+### Step 5: ページ・セクションの実装
+`structure_analyzer/output.json` の各ページ・セクションを順に実装する。
+
+**実装順序（優先度順）:**
+1. トップページのヒーローセクション
+2. トップページの各セクション（上から順に）
+3. サブページ（コーポレートサイトの場合）
+4. レスポンシブ対応（各セクション実装時に同時に対応）
+
+**各セクション実装時の参照先:**
+- レイアウト → `structure_analyzer/output.json`
+- カラー・タイポグラフィ → `design_analyzer/output.json`
+- アニメーション → `motion_analyzer/output.json`
+- インタラクション → `interaction_analyzer/output.json`
+- 画像・アイコン → `asset_collector/output.json`
+
+### Step 6: モーション実装
+`motion_analyzer/output.json` に基づいてアニメーションを実装:
+
+1. **スクロールアニメーション**: framer-motion の `useInView` + `motion.div`
+
+（…続きは元のprompt.md参照）
+
+#### 追加出力フォーマット
+`/agents/web_builder/builder/output.json` に保存:
+
+```json
+{
+  "iteration": 1,
+  "project_path": "/agents/web_builder/output",
+  "tech_stack": {
+    "framework": "Next.js 15 (App Router)",
+    "styling": "Tailwind CSS 4",
+    "language": "TypeScript",
+    "animation": "framer-motion",
+    "icons": "lucide-react",
+    "slider": "swiper"
+  },
+  "pages_built": [
+    {"path": "/", "sections": 8, "status": "complete"},
+    {"path": "/about", "sections": 5, "status": "complete"},
+    {"path": "/contact", "sections": 3, "status": "complete"}
+  ],
+  "components_built": [
+    "Header", "Footer", "Container", "SectionHeading",
+    "Button", "Card", "Modal", "Accordion", "MobileMenu"
+  ],
+  "files_created": [
+    "src/app/layout.tsx",
+    "src/app/page.tsx",
+    "src/app/about/page.tsx",
+    "src/components/Header.tsx",
+    "src/components/Footer.tsx"
+  ],
+  "build_status": "success",
+  "build_errors": [],
+  "known_limitations": [
+    "ヒーロー画像はUnsplashのプレースホルダーを使用",
+    "お問い合わせフォームは送信先APIが未設定"
+  ]
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

@@ -133,6 +133,172 @@ STEP 6: 忠実度スコア算出・判定
 - **Kaito**：通過後に報告・スコアを引き渡す
 - **Sora**：KaitoがSoraへ渡す際のスコアデータとして参照される
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/web_builder_qa_reviewer`
+
+#### 追加された役割範囲
+Builder が生成したサイトを Vercel にデプロイし、参考サイトと比較検証する。
+構造・デザイン・モーション・インタラクション・レスポンシブの5カテゴリで
+スコアリングを行い、具体的な修正指示を生成する。
+
+#### 追加タスク・スキル
+### Step 1: Vercel へのデプロイ
+Builder が生成した `/agents/web_builder/output/` を Vercel にデプロイする:
+
+1. Vercel MCP の `deploy_to_vercel` ツールを使用
+2. デプロイURLを記録
+3. デプロイが完了するまで待機
+
+### Step 2: 再現サイトの確認
+デプロイされたサイトを `web_fetch_vercel_url` で取得し、HTMLを確認する。
+
+### Step 3: 参考サイトの再取得
+`site_scanner/output.json` の URL から参考サイトのHTMLを `WebFetch` で再取得する。
+
+### Step 4: 5カテゴリでの比較検証
+
+#### 4-1: Structure（構造）— 配点 20点
+`structure_analyzer/output.json` と比較して:
+- [ ] セクションの数と順序が一致しているか
+- [ ] 各セクションのレイアウト（grid/flex）が正しいか
+- [ ] ナビゲーション項目が全て実装されているか
+- [ ] フッターの構成が一致しているか
+- [ ] セマンティックHTMLが適切に使われているか
+- [ ] ページ構成（複数ページの場合）が揃っているか
+
+#### 4-2: Design（デザイン）— 配点 25点
+`design_analyzer/output.json` と比較して:
+- [ ] カラーパレットが正確に再現されているか
+- [ ] フォントファミリーとウェイトが正しいか
+- [ ] 見出し・本文のサイズ・行間が適切か
+- [ ] ボタンのスタイル（色、角丸、パディング）が一致するか
+- [ ] カードのスタイル（影、角丸、パディング）が一致するか
+- [ ] セクション間のスペーシングが適切か
+- [ ] 全体的なビジュアルトーンが参考サイトと近いか
+
+#### 4-3: Motion（モーション）— 配点 20点
+`motion_analyzer/output.json` と比較して:
+- [ ] スクロールアニメーションが実装されているか
+- [ ] アニメーションのタイプ（fade-in-up等）が正しいか
+- [ ] ホバーエフェクトが実装されているか
+- [ ] アニメーションのタイミング（duration, delay）が適切か
+- [ ] 特殊アニメーション（カウントアップ、パララックス等）が動作するか
+
+#### 4-4: Interaction（インタラクション）— 配点 20点
+`interaction_analyzer/output.json` と比較して:
+- [ ] フォームが正しく配置・表示されているか
+- [ ] フォームのフィールドが全て揃っているか
+- [ ] バリデーションが動作するか
+- [ ] モーダル/ポップアップが動作するか
+- [ ] アコーディオンの開閉が正しく動作するか
+- [ ] タブ切り替えが動作するか
+- [ ] スライダーが動作するか（自動再生、ナビゲーション）
+- [ ] モバイルメニューが動作するか
+
+#### 4-5: Responsive（レスポンシブ）— 配点 15点
+- [ ] モバイル表示（375px幅）でレイアウトが崩れないか
+- [ ] タブレット表示（768px幅）でレイアウトが崩れないか
+- [ ] テキストサイズがモバイルで適切に調整されているか
+- [ ] グリッドがモバイルで1カラムに変わるか
+- [ ] ナビゲーションがモバイルでハンバーガーに変わるか
+- [ ] 画像がレスポンシブに表示されるか
+
+### Step 5: スコアリング
+各カテゴリの項目を確認し、0〜100点でスコアを付ける:
+- 全項目OK → 100点
+- 軽微な差異あり → 80点
+- 一部未実装 → 60点
+- 多数未実装 → 40点
+- ほぼ未実装 → 20点
+
+**合計スコア = 各カテゴリスコア × 配点割合の加重平均**
+
+### Step 6: 修正指示の生成
+スコアが低い項目について、具体的な修正指示を生成する:
+
+各指示には以下を含める:
+1. **priority**: high / medium / low
+2. **category**: structure / design / motion / interaction / responsive
+3. **file**: 修正対象のファイルパス
+4. **section**: 該当セクション名
+5. **issue**: 問題の具体的な説明
+
+（…続きは元のprompt.md参照）
+
+#### 追加出力フォーマット
+`/agents/web_builder/qa_reviewer/iteration_N.json` に保存（Nはイテレーション番号）:
+
+```json
+{
+  "iteration": 1,
+  "deploy_url": "https://project-name.vercel.app",
+  "reference_url": "https://example.com",
+  "overall_score": 72,
+  "categories": {
+    "structure": {
+      "score": 85,
+      "max_points": 20,
+      "weighted_score": 17,
+      "issues": [
+        "FAQセクションが未実装",
+        "フッターのSNSリンクカラムが欠落"
+      ]
+    },
+    "design": {
+      "score": 70,
+      "max_points": 25,
+      "weighted_score": 17.5,
+      "issues": [
+        "プライマリカラーが #3B82F6 ではなく #2563EB になっている",
+        "h1のfont-sizeが48pxではなく36pxになっている",
+        "セクション間のスペーシングが80pxで参考サイトの120pxより狭い"
+      ]
+    },
+    "motion": {
+      "score": 60,
+      "max_points": 20,
+      "weighted_score": 12,
+      "issues": [
+        "features セクションのスクロールアニメーションが未実装",
+        "カードのホバーエフェクト（浮き上がり）が未実装"
+      ]
+    },
+    "interaction": {
+      "score": 65,
+      "max_points": 20,
+      "weighted_score": 13,
+      "issues": [
+        "アコーディオンの開閉アニメーションが直線的（easingなし）",
+        "モバイルメニューのスライドインが未実装（即座に表示される）"
+      ]
+    },
+    "responsive": {
+      "score": 80,
+      "max_points": 15,
+      "weighted_score": 12,
+      "issues": [
+        "タブレット表示でカードが2列ではなく1列になっている"
+      ]
+    }
+  },
+  "fix_instructions": [
+    {
+      "priority": "high",
+      "category": "structure",
+      "file": "src/app/page.tsx",
+      "section": "faq",
+      "issue": "FAQセクションが完全に欠落している",
+      "expected": "8項目のアコーディオン形式のFAQセクション",
+      "current": "該当セクションなし",
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

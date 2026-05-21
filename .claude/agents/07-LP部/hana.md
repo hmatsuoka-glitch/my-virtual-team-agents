@@ -114,6 +114,367 @@ STEP 8: 仕様データを構造化して出力
 - **Nao**：仕様データを設計書作成に引き渡す
 - **Ren**：仕様データをコード骨格生成に引き渡す（STEP 2と並列）
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/web_builder_site_scanner`
+
+#### 追加された役割範囲
+参考サイトのURL を受け取り、サイト全体の構成・使用技術・ページ一覧を把握する。
+後続の全エージェントが正確に分析できるよう、共通コンテキストを提供する最初のエージェント。
+
+#### 追加タスク・スキル
+### Step 1: トップページの取得と基本情報抽出
+`WebFetch` でトップページのHTMLを取得し、以下を抽出する:
+
+- `<title>`, `<meta description>`, OGP情報
+- `<html lang="...">` から言語を判定
+- viewport meta タグからレスポンシブ対応状況を確認
+
+### Step 2: サイト内リンクの収集
+HTMLから内部リンク（同一ドメイン）を収集し、ページ一覧を作成する:
+
+- `<nav>` 内のリンクを優先的に収集
+- `<footer>` 内のリンクも収集
+- `<a href="...">` から同一ドメインのURLを抽出
+- 重複を排除し、各ページの役割を推測（top/about/service/contact/blog 等）
+
+**LP（単一ページ）の場合:**
+- ページ内アンカーリンク（`#section-name`）を収集
+- `site_type: "lp"` として記録
+
+**コーポレートサイト（複数ページ）の場合:**
+- 主要ページ（5〜10ページ程度）のURLを収集
+- `site_type: "corporate"` として記録
+
+### Step 3: 技術スタック検出
+HTMLソースと読み込まれたリソースから技術を検出する:
+
+**フレームワーク検出:**
+- `__NEXT_DATA__`, `_next/` → Next.js
+- `__NUXT__`, `_nuxt/` → Nuxt.js
+- `data-reactroot` → React
+- `ng-version` → Angular
+- WordPress特有のクラス名・パス → WordPress
+
+**CSSフレームワーク検出:**
+- `tailwind` クラス名パターン → Tailwind CSS
+- `bootstrap` クラス名 → Bootstrap
+- カスタムCSS
+
+**外部ライブラリ検出:**
+- `gsap`, `ScrollTrigger` → GSAP
+- `swiper` → Swiper
+- `aos` → AOS (Animate On Scroll)
+- `lottie` → Lottie
+- `three.js`, `WebGL` → Three.js
+- `jQuery` → jQuery
+
+**アナリティクス・ツール:**
+- Google Analytics / GTM
+- Facebook Pixel 等
+
+### Step 4: サイトの特徴メモ
+サイト全体の印象・特徴を簡潔にメモする:
+- デザインの方向性（ミニマル/リッチ/コーポレート等）
+- 主なビジュアル要素（動画背景/パララックス/大きな写真等）
+- ターゲットユーザーの推測
+
+#### 追加出力フォーマット
+`/agents/web_builder/site_scanner/output.json` に保存:
+
+```json
+{
+  "url": "https://example.com",
+  "site_type": "lp | corporate",
+  "pages": [
+    {
+      "url": "https://example.com",
+      "title": "トップページ",
+      "role": "top"
+    },
+    {
+      "url": "https://example.com/about",
+      "title": "会社概要",
+      "role": "about"
+    }
+  ],
+  "tech_stack": {
+    "framework": "Next.js | WordPress | static | unknown",
+    "css": "Tailwind CSS | Bootstrap | custom",
+    "cms": "WordPress | none",
+    "analytics": "Google Analytics | GTM | none"
+  },
+  "external_libraries": ["GSAP", "Swiper", "AOS"],
+  "meta": {
+    "title": "サイトタイトル",
+    "description": "メタディスクリプション",
+    "og_image": "OGP画像URL"
+  },
+  "total_pages": 5,
+  "primary_language": "ja",
+  "site_characteristics": "ミニマルデザイン。大きなヒーロー画像とスムーズスクロール。BtoB向けSaaS。",
+  "responsive": true
+}
+```
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/web_builder_design_analyzer`
+
+#### 追加された役割範囲
+参考サイトのビジュアルデザインを詳細に分析し、カラーパレット・タイポグラフィ・
+スペーシング・ビジュアルスタイルを体系的に抽出する。Builder が Tailwind CSS の
+設定とスタイリングを正確に再現できるデザイントークンを生成する。
+
+#### 追加タスク・スキル
+### Step 1: CSSの取得と解析
+`WebFetch` でページのHTMLを取得し、以下のCSS情報を収集する:
+
+- `<link rel="stylesheet">` で読み込まれている外部CSS
+- `<style>` タグ内のインラインCSS
+- CSS カスタムプロパティ（`--primary-color` 等）の定義
+- `:root` や `body` に定義されたグローバルスタイル
+
+### Step 2: カラーパレットの抽出
+サイト全体で使用されているカラーを分類する:
+
+1. **プライマリカラー**: メインのブランドカラー（CTA ボタン、アクセント等）
+2. **セカンダリカラー**: サブカラー
+3. **アクセントカラー**: 強調色
+4. **背景色**: メイン背景、セクション背景のバリエーション
+5. **テキストカラー**: 見出し色、本文色、薄いテキスト色
+6. **グレースケール**: ボーダー、区切り線等に使われるグレー
+
+CSS変数、インラインスタイル、クラス名から色情報を抽出する。
+色は HEX コード（`#RRGGBB`）で統一して記録する。
+
+### Step 3: タイポグラフィの抽出
+フォント関連の情報を体系的に記録する:
+
+1. **フォントファミリー**:
+   - 日本語フォント（Noto Sans JP, Yu Gothic, etc.）
+   - 欧文フォント（Inter, Poppins, etc.）
+   - Google Fonts のインポートURLを確認
+2. **見出しスタイル** (h1〜h4):
+   - font-size（px または rem）
+   - font-weight
+   - line-height
+   - letter-spacing
+   - モバイル時のサイズ変化
+3. **本文スタイル**:
+   - font-size
+   - font-weight
+   - line-height（日本語は 1.8〜2.0 が多い）
+4. **その他**:
+   - キャプション、ラベル、ボタンテキスト等の小さいテキスト
+
+### Step 4: スペーシングシステムの解析
+セクション間・要素間の余白パターンを記録する:
+
+- セクション間の上下マージン/パディング
+- コンテンツ領域の左右パディング
+- カード間のギャップ
+- 見出しと本文の間隔
+- ボタンの内部パディング
+
+### Step 5: UIコンポーネントのスタイル
+よく使われるUIパーツのスタイルを記録する:
+
+1. **ボタン**:
+   - プライマリボタン（背景色、テキスト色、角丸、パディング）
+   - セカンダリボタン/ゴーストボタン
+   - ホバー時の変化
+2. **カード**:
+   - 背景色、ボーダー、シャドウ、角丸
+3. **画像の扱い**:
+   - 角丸、オーバーレイ、アスペクト比
+4. **アイコン**:
+   - スタイル（線画/塗り）、サイズ、色
+
+### Step 6: セクション別デザインノート
+各セクションのビジュアル的な特徴を記録する:
+- 背景処理（色/画像/グラデーション/動画）
+- テキスト色（背景に応じた変化）
+- 特殊な装飾要素（斜めの区切り線、波形、パターン背景等）
+
+#### 追加出力フォーマット
+`/agents/web_builder/design_analyzer/output.json` に保存:
+
+```json
+{
+  "colors": {
+    "primary": "#3B82F6",
+    "secondary": "#10B981",
+    "accent": "#F59E0B",
+    "background": {
+      "main": "#FFFFFF",
+      "alt": "#F8FAFC",
+      "dark": "#0F172A"
+    },
+    "text": {
+      "primary": "#1E293B",
+      "secondary": "#64748B",
+      "on_dark": "#F8FAFC",
+      "on_primary": "#FFFFFF"
+    },
+    "border": "#E2E8F0",
+    "full_palette": ["#0F172A", "#1E293B", "#3B82F6", "#10B981", "#F59E0B", "#F8FAFC", "#FFFFFF"]
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Noto Sans JP",
+      "body": "Noto Sans JP",
+      "accent": "Inter",
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;600;700&display=swap"
+    },
+    "h1": {"size": "48px", "size_mobile": "32px", "weight": "700", "line_height": "1.2", "letter_spacing": "0"},
+    "h2": {"size": "36px", "size_mobile": "24px", "weight": "700", "line_height": "1.3", "letter_spacing": "0"},
+    "h3": {"size": "24px", "size_mobile": "20px", "weight": "600", "line_height": "1.4", "letter_spacing": "0"},
+    "h4": {"size": "20px", "size_mobile": "18px", "weight": "600", "line_height": "1.4", "letter_spacing": "0"},
+    "body": {"size": "16px", "weight": "400", "line_height": "1.8", "letter_spacing": "0.02em"},
+    "small": {"size": "14px", "weight": "400", "line_height": "1.6"},
+    "caption": {"size": "12px", "weight": "400", "line_height": "1.5"}
+  },
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/web_builder_asset_collector`
+
+#### 追加された役割範囲
+参考サイトで使用されている画像・フォント・アイコン・ファビコン等の
+ビジュアルアセットを収集・整理し、Builder が実装時に適切なアセットを
+配置できるよう準備する。
+
+**重要:** 著作権に配慮し、参考サイトの画像を直接コピーせず、
+代替アセットの調達方法（Unsplash、プレースホルダーSVG等）を提示する。
+
+#### 追加タスク・スキル
+### Step 1: 画像アセットの収集
+HTMLから全 `<img>` タグと CSS `background-image` を抽出する:
+
+各画像について:
+1. **元URL**: src 属性の値
+2. **使用箇所**: どのセクションのどの位置で使われているか
+3. **alt テキスト**: 画像の説明
+4. **サイズ/アスペクト比**: width, height 属性または CSS
+5. **種類分類**:
+   - `hero-image`: ヒーローセクション背景
+   - `content-image`: コンテンツ内画像
+   - `icon-image`: アイコン的な画像
+   - `logo`: ロゴ画像
+   - `avatar`: 人物写真
+   - `decorative`: 装飾画像
+6. **代替戦略**:
+   - Unsplash で類似画像を検索するためのキーワード
+   - SVG プレースホルダーで代用する場合のサイズ・色
+   - ダミーテキストとアスペクト比だけ合わせる
+
+### Step 2: フォントの収集
+`design_analyzer/output.json` の typography 情報を基に:
+
+1. **Google Fonts**: インポートURL と必要なウェイト
+   - `next/font/google` での設定方法を記録
+2. **Adobe Fonts**: フォント名と代替フォントの提案
+3. **カスタムフォント**: woff2 ファイルのURL（取得可能な場合）
+4. **フォールバック**: 各フォントに対する適切なフォールバック指定
+
+### Step 3: アイコンの収集
+ページ内で使われているアイコンを分類する:
+
+1. **SVGインラインアイコン**: コードから抽出
+2. **アイコンフォント**: Font Awesome, Material Icons 等
+3. **画像アイコン**: PNG/SVG ファイル
+4. **推奨ライブラリ**: 再現に最適なアイコンライブラリを選定
+   - `lucide-react`: モダンでシンプルな線画アイコン
+   - `heroicons`: Tailwind CSS 公式
+   - `react-icons`: 複数ライブラリを統合
+   各アイコンに対して推奨ライブラリのアイコン名を対応付ける
+
+### Step 4: ファビコン・OGP画像
+- ファビコン: 形状・色の説明とプレースホルダー生成方針
+- OGP画像: サイズ・デザインの説明
+
+### Step 5: ローカルファイルパス設計
+Next.js の `/public` ディレクトリ構成を設計する:
+
+```
+/public/
+├── images/
+│   ├── hero/
+│   ├── content/
+│   ├── avatars/
+│   └── logos/
+├── icons/
+├── fonts/        (カスタムフォントがある場合)
+└── favicon.ico
+```
+
+#### 追加出力フォーマット
+`/agents/web_builder/asset_collector/output.json` に保存:
+
+```json
+{
+  "images": [
+    {
+      "original_src": "https://example.com/images/hero.jpg",
+      "usage": "hero-background",
+      "section_id": "hero",
+      "alt": "ビジネスミーティングの風景",
+      "width": 1920,
+      "height": 1080,
+      "aspect_ratio": "16:9",
+      "type": "hero-image",
+      "local_path": "/public/images/hero/hero-bg.jpg",
+      "placeholder_strategy": "unsplash: business meeting modern office",
+      "priority": "high"
+    },
+    {
+      "original_src": "https://example.com/images/team.jpg",
+      "usage": "about-section team photo",
+      "section_id": "about",
+      "alt": "チームメンバーの集合写真",
+      "width": 800,
+      "height": 600,
+      "aspect_ratio": "4:3",
+      "type": "content-image",
+      "local_path": "/public/images/content/team.jpg",
+      "placeholder_strategy": "unsplash: diverse team office",
+      "priority": "medium"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Noto Sans JP",
+      "source": "google",
+      "weights": [400, 500, 700],
+      "subsets": ["latin", "japanese"],
+      "next_font_config": "const notoSansJP = Noto_Sans_JP({ subsets: ['latin'], weight: ['400', '500', '700'], display: 'swap' })",
+      "fallback": "sans-serif"
+    },
+    {
+      "family": "Inter",
+      "source": "google",
+      "weights": [400, 600, 700],
+      "subsets": ["latin"],
+      "next_font_config": "const inter = Inter({ subsets: ['latin'], weight: ['400', '600', '700'], display: 'swap' })",
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15

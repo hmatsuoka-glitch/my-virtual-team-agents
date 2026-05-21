@@ -260,6 +260,261 @@ STEP 5: Renへ実装指示
 - **Mia**：実装後の品質チェックを依頼する（Ren経由）
 - **ユーザー**：デザイン案の選定・確認を行う
 
+
+---
+
+## 追加能力（eijiyoshikawa/agents より統合）
+
+### 出典: `eijiyoshikawa/agents/web_builder_motion_analyzer`
+
+#### 追加された役割範囲
+参考サイトのアニメーション・トランジション・スクロールエフェクト・ホバー演出を
+詳細に特定し、Builder が正確に再現できるモーション設計書を作成する。
+
+#### 追加タスク・スキル
+### Step 1: CSS アニメーション・トランジションの検出
+CSSファイルとインラインスタイルから以下を検出する:
+
+- `@keyframes` 定義（アニメーション名、プロパティ変化、タイミング）
+- `transition` プロパティ（対象プロパティ、duration、easing）
+- `animation` プロパティ（参照するkeyframes、繰り返し、方向）
+- `transform` の使用パターン（translate, scale, rotate）
+- `opacity` の変化パターン
+
+### Step 2: JavaScript アニメーションライブラリの検出
+`site_scanner/output.json` の `external_libraries` を参照しつつ、
+JS ソースから以下のパターンを検出する:
+
+- **GSAP**: `gsap.to()`, `ScrollTrigger`, `timeline`
+- **AOS**: `data-aos="fade-up"` 等の属性
+- **Intersection Observer**: `IntersectionObserver` の使用
+- **Framer Motion**: `motion.div`, `animate`, `variants`
+- **Lottie**: `lottie-player`, `lottie-web`
+- **Scroll系**: `scroll-behavior: smooth`, parallax 実装
+
+### Step 3: スクロールアニメーションの特定
+ページをスクロールした時に発火するアニメーションを特定する:
+
+各セクション/要素について:
+1. **トリガー条件**: 画面内に入った時 / スクロール位置 / 特定の%
+2. **アニメーション種類**:
+   - `fade-in`: フェードイン
+   - `fade-in-up`: 下から上にフェードイン
+   - `fade-in-left`/`fade-in-right`: 左右からフェードイン
+   - `scale-in`: 拡大しながら表示
+   - `slide-in`: スライドイン
+   - `stagger`: 子要素が順番に表示
+3. **タイミング**: duration, delay, easing (ease, ease-out, cubic-bezier)
+4. **子要素のスタガー**: 順番に表示される場合、その間隔
+
+### Step 4: ホバーエフェクトの特定
+マウスオーバー時の演出を記録する:
+
+- ボタン: 色変化、拡大、シャドウ変化、矢印移動
+- カード: 浮き上がり（translateY + shadow）、画像ズーム
+- リンク: 下線アニメーション、色変化
+- 画像: ズーム、オーバーレイ表示
+
+### Step 5: ページ遷移・特殊アニメーションの検出
+- ページ遷移アニメーション（fade, slide, none）
+- ローディングアニメーション
+- スクロールに連動したパララックス効果
+- 数値カウントアップ
+- テキストアニメーション（タイピング、文字ごとのフェードイン等）
+- スクロールバー連動のプログレスバー
+
+### Step 6: 実装推奨の決定
+検出したアニメーションの複雑さに応じて、最適な実装方法を推奨する:
+
+- **CSS only**: シンプルなhover、transition、基本的なkeyframes
+- **framer-motion**: React向けスクロールアニメーション、ページ遷移
+- **GSAP**: 複雑なタイムライン、ScrollTrigger連動、パフォーマンス重視
+
+#### 追加出力フォーマット
+`/agents/web_builder/motion_analyzer/output.json` に保存:
+
+```json
+{
+  "scroll_animations": [
+    {
+      "section_id": "hero",
+      "target": "h1, p, buttons",
+      "type": "fade-in-up",
+      "trigger": "on-load",
+      "duration": "0.8s",
+      "delay": "0.2s",
+      "stagger": "0.15s",
+      "easing": "ease-out",
+      "implementation": "framer-motion variants + staggerChildren"
+    },
+    {
+      "section_id": "features",
+      "target": "各カード",
+      "type": "fade-in-up",
+      "trigger": "scroll-into-view",
+      "duration": "0.6s",
+      "delay": "0",
+      "stagger": "0.1s",
+      "easing": "ease-out",
+      "implementation": "framer-motion useInView + stagger"
+    }
+  ],
+  "hover_effects": [
+    {
+      "target": "primary-button",
+      "effects": ["背景色を暗く", "translateY(-2px)", "shadow-lg追加"],
+      "duration": "0.3s",
+      "easing": "ease",
+      "implementation": "CSS transition + Tailwind hover:"
+    },
+    {
+      "target": "card",
+      "effects": ["translateY(-4px)", "shadow-xl"],
+      "duration": "0.3s",
+      "easing": "ease",
+      "implementation": "CSS transition + Tailwind hover:"
+    },
+    {
+      "target": "card内の画像",
+      "effects": ["scale(1.05)"],
+      "duration": "0.5s",
+      "easing": "ease",
+      "implementation": "CSS transform + overflow-hidden"
+    }
+  ],
+  "page_transitions": {
+    "type": "fade",
+    "duration": "0.3s",
+    "implementation": "framer-motion AnimatePresence"
+  },
+  "special_animations": [
+    {
+      "type": "parallax",
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
+
+---
+
+
+### 出典: `eijiyoshikawa/agents/web_builder_interaction_analyzer`
+
+#### 追加された役割範囲
+参考サイトのフォーム・ポップアップ・モーダル・アコーディオン・タブ・スライダー等の
+インタラクティブなUI要素を詳細に解析し、Builder が完全に動作する
+インタラクションを実装できる設計書を作成する。
+
+#### 追加タスク・スキル
+### Step 1: フォーム要素の解析
+ページ内の全 `<form>` 要素を検出し、以下を記録する:
+
+各フォームについて:
+1. **配置場所**: セクション名/ページ名
+2. **フォームの種類**: お問い合わせ / 資料請求 / メルマガ登録 / 検索 等
+3. **フィールド一覧**:
+   - フィールド名（name属性）
+   - 入力タイプ（text, email, tel, textarea, select, radio, checkbox）
+   - 必須かどうか（required属性）
+   - プレースホルダーテキスト
+   - バリデーションルール
+4. **送信先**: action属性 / JavaScriptでの送信処理
+5. **レイアウト**: 1カラム / 2カラム / インライン
+6. **送信ボタン**: テキスト、スタイル
+7. **確認画面/完了メッセージ**: 有無とその内容
+
+### Step 2: モーダル・ポップアップの解析
+モーダルやポップアップの実装を検出する:
+
+- **トリガー**: ボタンクリック / スクロール位置 / 時間経過 / 離脱意図
+- **コンテンツ**: フォーム / 画像 / テキスト / 動画
+- **閉じ方**: オーバーレイクリック / Xボタン / Escapeキー
+- **アニメーション**: フェードイン / スライドアップ / ズーム
+- **オーバーレイ**: 半透明黒背景の有無と透過度
+
+### Step 3: タブ・アコーディオンの解析
+タブ切り替えやアコーディオンの実装を検出する:
+
+**タブ:**
+- タブの数と各タブのラベル
+- アクティブタブのスタイル（下線、背景色等）
+- コンテンツ切り替えのアニメーション
+- デフォルトで開いているタブ
+
+**アコーディオン:**
+- 項目数と各項目のタイトル
+- 開閉動作（single-open: 1つだけ開く / multi-open: 複数開ける）
+- アイコン（+ / - / 矢印）
+- 開閉アニメーション
+
+### Step 4: スライダー・カルーセルの解析
+画像やコンテンツのスライダーを検出する:
+
+- スライド数
+- 自動再生の有無（インターバル秒数）
+- ナビゲーション（前後矢印、ドットインジケーター）
+- スワイプ対応
+- ループ設定
+- スライドの内容（画像のみ / テキスト付き / テスティモニアル）
+- レスポンシブ時の表示数変化（PC: 3枚 → SP: 1枚 等）
+
+### Step 5: ナビゲーションのインタラクション
+- **モバイルメニュー**: ハンバーガーアイコン → メニュー展開のアニメーション
+  - スライドイン方向（右から / 左から / 上から / フルスクリーン）
+  - メニュー項目の表示アニメーション
+- **スムーススクロール**: アンカーリンクでの滑らかなスクロール
+- **ヘッダー変化**: スクロール時のヘッダー縮小 / 背景色変化
+- **スクロールトップボタン**: 表示条件、位置、アニメーション
+
+### Step 6: その他のインタラクティブ要素
+- **ツールチップ**: ホバー時の説明表示
+- **ドロップダウン**: 選択メニュー
+- **コピーボタン**: テキスト/URLのコピー
+- **SNSシェアボタン**: シェア機能
+- **Cookie同意バナー**: 表示条件、レイアウト
+- **画像ギャラリー**: ライトボックス表示
+- **動画再生**: インライン再生 / モーダル再生
+
+#### 追加出力フォーマット
+`/agents/web_builder/interaction_analyzer/output.json` に保存:
+
+```json
+{
+  "forms": [
+    {
+      "id": "contact-form",
+      "location": "contact-section（ページ下部）",
+      "type": "contact",
+      "layout": "single-column",
+      "fields": [
+        {"name": "company", "type": "text", "label": "会社名", "required": false, "placeholder": "株式会社〇〇"},
+        {"name": "name", "type": "text", "label": "お名前", "required": true, "placeholder": "山田 太郎"},
+        {"name": "email", "type": "email", "label": "メールアドレス", "required": true, "placeholder": "info@example.com"},
+        {"name": "phone", "type": "tel", "label": "電話番号", "required": false, "placeholder": "03-1234-5678"},
+        {"name": "category", "type": "select", "label": "お問い合わせ種別", "required": true, "options": ["サービスについて", "お見積り", "採用", "その他"]},
+        {"name": "message", "type": "textarea", "label": "お問い合わせ内容", "required": true, "placeholder": "お気軽にご相談ください", "rows": 6}
+      ],
+      "submit_button": {"text": "送信する", "style": "primary-full-width"},
+      "validation": "client-side (HTML5 + custom)",
+      "privacy_checkbox": true,
+      "privacy_text": "プライバシーポリシーに同意する",
+      "completion_message": "お問い合わせありがとうございます。3営業日以内にご連絡いたします。"
+    }
+  ],
+  "modals": [
+    {
+      "id": "inquiry-modal",
+      "trigger": "CTAボタンクリック「無料相談はこちら」",
+      "content_type": "form",
+      "animation": "fade-in + scale-up",
+      "overlay": "rgba(0,0,0,0.6)",
+      "close_methods": ["overlay-click", "x-button", "escape-key"],
+
+（…続きは元のprompt.md参照）
+
+> このセクションは外部リポジトリ統合により追加されました。元プロフィール・役割定義は本ファイル上部に維持されています。
+
 ## 📝 Daily Knowledge Log
 
 ### 2026-05-15
