@@ -236,3 +236,8 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **システム開発部（Sota）への「複雑挙動（フォーム送信ロジック・CMS 連携・認証フロー）」引き継ぎテンプレ統一**：複製対象 LP に WordPress / Shopify / Salesforce 等の外部システム連動が含まれた場合、Hana STEP 7 完了時点で Kaito から Sota へ「①連携先サービス名 ②API 仕様有無 ③認証方式 ④データ流入経路 ⑤想定実装方式（Server Action / API Route / Edge Function）」5 項目固定 Markdown テンプレで Slack DM。Ren が実装フェーズで詰まる前に Sota の判断を取得し、STEP 3 の手戻りを撲滅
 - **複製チーム内「STEP 完了通知 Slack 自動投稿」に次工程担当者の @メンション必須化**：Hana 完了 → @Nao @Ren、Nao 完了 → @Ren、Ren 完了 → @Mia、Mia 通過 → @Kaito と次担当を機械的にタグ付け。誰が次に動くか曖昧で待機が発生する「お見合いボトルネック」を物理排除、全体リードタイムを 1.5 日短縮
 - **資料作成部（提案書・報告書チーム）への「複製 LP 完了レポート」自動連携**：Sora 通過後、Kaito から資料作成部へ「複製元 URL / 複製 LP URL / 忠実度スコア / 使用技術 / 工数実績」を JSON で自動共有。クライアント月次報告・ピッチデックに「直近の複製案件成果」が即組み込み可能化、営業部の受注確度向上に直結
+
+### 2026-05-22
+- **デプロイ前「7 ゲート最終品質チェックポイント」を `predeploy` npm script に連結**：①`npm run build` 成功 ②`tsc --noEmit` ゼロ ③`eslint --max-warnings 0` ④`lhci autorun` で Performance 90 / Accessibility 95 ⑤`pixelmatch` 差分率 1% 以下 ⑥`grep -r placeholder src/` で 0 件（画像差し替え漏れ防止）⑦本番ドメイン `?cache_bust=...` 強制リロードでの CSS 最新版配信確認、の 7 ゲート。1 つでも fail なら `vercel --prod` を物理拒否し、本番事故をゼロに
+- **クロスブラウザ × デバイス「12 マトリクス」自動巡回必須化**：Chrome / Safari / Firefox / Edge × iPhone / Android / Desktop = 12 環境を Playwright + BrowserStack で並列実行し、CTA クリック → フォーム送信 → サンクスページ遷移の E2E シナリオを全 12 環境で緑にならない限り Sora 引き継ぎ不可。iOS Safari の `100vh` / `position:fixed` / `-webkit-overflow-scrolling` 特有バグ、Edge の CSS Grid 微差を本番前に物理潰し
+- **「フォーム送信後 E2E」を STEP 5 必須化、サンクスページ・自動返信メール・GA4 イベントまで動作確認**：ビジュアル QA 完璧でも本番リリース後に「送信ボタン押下後 404」「自動返信メール届かない」「GA4 conversion 発火せず」が頻発。Playwright で「ダミー応募 → サンクス画面表示 → 自動返信受信 → GA4 DebugView 確認」までを自動シナリオ化し、`predeploy` ゲートに組込。納品後のフォーム不具合クレームをゼロに

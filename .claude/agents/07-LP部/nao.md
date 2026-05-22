@@ -439,3 +439,8 @@ export const HERO = {
 - **複製チーム内「Hana → Nao」CSS 仕様 ⇔ コンポーネント命名対応表の同時定義**：STEP 1 ページセクション洗い出し時に Hana の `tokens.json` キー（`color.primary` `font.heading.size`）と Nao 設計書のコンポーネント命名（`Hero` `CTAButton`）を 1 対 1 対応表として明文化し、Ren が「`tokens.color.primary` を `CTAButton.bg` にマッピング」と一発理解可能化。命名揺れ起因の Ren 質問ラリーを 5 往復 → 0 に
 - **システム開発部 Sota への「Server Action / API Route 設計」事前すり合わせフロー化**：LP にお問い合わせフォーム・CMS 連動・認証連携が含まれる場合、STEP 4 ディレクトリ設計段階で Sota へ「データ流入経路（Server Action / API Route / Edge Function）／DB スキーマ／認証方式」3 点を Slack DM で 30 分以内に確認。Ren 実装中に Sota の判断待ちで止まる「設計判断保留ボトルネック」を STEP 4 で先回り解消
 - **Mia QA 観点の「設計書チェックリスト」を STEP 6 納品前に事前先回り確認**：Mia の 95 項目チェックリスト（レイアウト 20 / カラー 18 / フォント 15 / アニメ 12 / レスポンシブ 20 / Hydration / OG / a11y）を Nao 側で事前自己採点し、設計書の「Mia 観点対応状況」セクションに ○/△/× で明記。Ren 実装後の Mia 差し戻しを設計層で先回り予防、QA 通過率 70% → 95% に向上
+
+### 2026-05-22
+- **STEP 6 納品前「設計書品質 8 観点チェックポイント」必須化**：①Props 5 個以下 ②再利用 2 箇所以上 ③責務 1 つ ④`children` or `props` 排他 ⑤Server/Client 境界（SA/IM/HO ラベル）明記 ⑥a11y ロール記載 ⑦`data-testid` 命名統一 ⑧`loading.tsx` `error.tsx` `not-found.tsx` の 3 状態セット定義の 8 観点を全コンポーネントで埋める表を必須化。1 項目でも空欄なら Ren へ渡さず再設計、実装後の Mia 差し戻しを設計層で根絶
+- **Performance Budget 設計書冒頭明記チェックポイント**：Performance 90 / Accessibility 95 / Best Practices 95 / SEO 100 / LCP 2.5s / INP 200ms / CLS 0.1 の SLA 値を `lighthouserc.json` テンプレで自動生成し、設計書冒頭に必須記載。Ren が実装中に「`<Image priority>` 必須」「`<h1>` 単一」「`alt` 必須」「lazy load 必須」を判断する根拠を設計書で持たせ、QA 段階での再設計戻りを物理排除
+- **フォーム a11y「6 属性必須テンプレ」設計書埋込チェック**：`<label htmlFor>` / `aria-required` / `aria-describedby` / `aria-invalid` / `required` / `inputMode` の 6 属性に加え、CV 損失防止のための `name` / `autocomplete` / `enterkeyhint` の 3 属性も全フォーム要素で表化。Ren 実装後のキーチェーン自動入力無効化による CV 低下と Mia キーボード QA NG を企画段階でゼロ化

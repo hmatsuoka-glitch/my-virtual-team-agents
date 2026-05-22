@@ -415,3 +415,8 @@ Builder が生成した `/agents/web_builder/output/` を Vercel にデプロイ
 - **Hana への「責務 NG 自動振り分け」運用化（カラー／フォント／アニメ → Hana 再抽出要求）**：Mia 差し戻し時に NG 内容を ①カラー HEX 不一致 ②フォント family/weight 違い ③アニメ duration/easing 違い の 3 カテゴリ自動判定し、これらは Ren ではなく Hana へ「再抽出要求」として自動エスカレ。Ren が「自分のミスじゃないのに修正指示が来る」という不要往復を物理排除、原因元での修正で再発率もゼロ化
 - **システム開発部 Sota への「Web Vitals + Hydration エラー」共有を STEP 6 通過レポート必須項目化**：LP 単体 QA だけでなく、システム連動案件では Mia 通過時の `Hydration failed` 警告ログ ＋ LCP/INP/CLS/TTFB 4 指標を Sota にも JSON で同時共有。Sota が API レスポンス時間・SSR レンダリング最適化を本番劣化前に着手可能化、システム連携 LP の納品後パフォーマンスクレームを根絶
 - **Kaito 経由「複製チーム内 5 分立ち会い QA」を STEP 6 通過直前に必須化**：Mia 単独の判定でなく、Hana・Nao・Ren と Kaito を集めて「3 デバイス × 3 ブラウザでの体感確認」を 5 分間共同実施し、全員が「OK」を出した時点で初めて通過判定。Mia 単独視点の偏り（PC Chrome 中心）を補正し、Sora 最終 QA でのリジェクト率を 15% → 2% に低減
+
+### 2026-05-22
+- **STEP 6 通過判定前「9 段階品質ゲートチェックポイント」を `npm run qa:full` で一発実行**：①`pixelmatch` 0.05 厳格判定（Hero/CTA/Form のみ）②`looks-same` 知覚判定（他要素）③`@axe-core/playwright` violations 0 件 ④Tab キー全 CTA フォーカス可能 ⑤VoiceOver 見出し階層読上 ⑥`lhci autorun` 4 カテゴリ全 90+ ⑦`page.on('console')` で Hydration warning 0 件 ⑧Google Rich Results Test API で構造化データ検証 ⑨フォーム E2E（送信→サンクス→自動返信）の 9 ゲート。1 つでも fail なら 85 点合格でも自動 84 点に減点、Sora QA リジェクト率を 3% 以下に維持
+- **本番ドメイン × CDN キャッシュ「強制リロード」必須化チェックポイント**：従来 Vercel Preview URL のみでの QA 通過後、本番ドメインで Cloudflare キャッシュ TTL=86400 の旧 CSS が配信される事故が頻発。STEP 6 通過判定前に「本番ドメインで `?cache_bust=$(date +%s)` クエリ付きアクセス + DevTools `Disable cache` チェックでハードリロード + Network タブで `.css` ファイルの ETag/Last-Modified が最新であること確認」を必須化。CDN 起因 NG をゼロに
+- **「Lab スコア vs Field データ（CrUX）乖離検出」を納品後 7 日継続監視**：Mia 通過時の Lighthouse Lab 値が 90 でも、本番リリース 1 週間後の CrUX で LCP 4.2s と判明する事故を予防。STEP 6 通過後 7 日目に `psi-api` で Field Data を自動取得し、Lab/Field 乖離 20% 超なら Kaito 経由で即時改修 Issue 起票。納品後の品質保証を継続化し、クライアントクレームを根絶

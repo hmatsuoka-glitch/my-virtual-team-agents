@@ -317,6 +317,12 @@ API 設計・データベース構築・認証/認可・決済連携を担当。
 - **PostgreSQL 17（2026 リリース）の新機能と業界影響**：論理レプリケーションの双方向対応・JSON_TABLE 関数の標準化・インデックス並列ビルドの高速化（2 倍）。Ao の DB 設計時に「JSON カラムでスキーマレス保持 + JSON_TABLE で SQL 検索」というハイブリッド設計が現実解に。NoSQL から RDB 回帰トレンドが 2026 業界で本格化、Mongo を捨てて PostgreSQL JSON へ移行する事例が増加。
 - **AI 駆動 SQL 最適化ツール「EverSQL / pganalyze」の現場導入加速**：本番 DB の Query Log を AI が解析し「このクエリにこのインデックス追加で 80% 高速化」と自動提案。Ao の手動チューニング工数 60% 削減、N+1 検出も自動化。Mio の QA フェーズで pganalyze レポートを必須添付化、レイテンシ SLO 違反を実装段階で予防する 2026 標準ワークフロー。
 
+### 2026-05-22
+- **PR 前 Ao セルフレビュー 8 点チェックリスト（品質ゲート）**：① TypeScript 型エラーゼロ（`tsc --noEmit` 必須 PASS）② ESLint 警告ゼロ（`@typescript-eslint/no-explicit-any` を error 化）③ Vitest 単体＋統合カバレッジ 80% 以上（特に異常系/認可ペアテスト網羅）④ N+1 検出（Prisma `log: ['query']` でローカル実行し 1 リクエスト＝ 1-2 SQL 確認）⑤シードデータ整合性（`pnpm db:seed` で fresh 環境再現可能）⑥環境変数の `.env.example` 追加漏れなし（`[env]` プレフィックスコミット）⑦ README 更新（新規エンドポイント仕様・cURL 例追加）⑧マイグレーション可逆性（`prisma migrate diff` で UP/DOWN SQL を併存）。1 つでも未達なら PR を Draft 維持、Mio レビュー依頼前ゲート化、レビュー往復 3 回→1 回に圧縮
+- **N+1 クエリ検出の CI 自動化**：`prisma-query-counter` を Vitest セットアップに組込、1 テスト内で発行 SQL 数が想定値（例：5 件）超過したら fail。`include` / `select` を明示しない Prisma 呼び出しを ESLint カスタムルールで警告、`findMany` には必ず `select` か `include` を必須化。本番デプロイ前の p95 レイテンシ NG をローカル段階で 100% 検出、Mio パフォーマンステスト工数 30 分→5 分
+- **マイグレーション可逆性の 3 段階デプロイ強制**：破壊的変更（DROP COLUMN・ALTER TYPE・NOT NULL 追加）を検出する `prisma migrate diff --from-empty --to-schema-datamodel` を CI で自動実行し、検出時は PR 自動ラベル `breaking-migration` 付与＋ kuu に Slack 通知。3 段階デプロイ（NULL 許容追加 → バックフィル → NOT NULL 化）を required workflow 化、本番マイグレーション事故ゼロ化。ロールバック SQL も同 PR に併存ファイル化を必須化
+- **環境変数漏れ防止の二重チェック**：`.env.example` に追加した変数を Zod の `envSchema.parse(process.env)` でアプリ起動時バリデーション、未設定時は即 crash で本番起動失敗を物理防止。CI で `.env.example` と `envSchema` の整合性 diff を自動比較、片方更新で他方未更新を PR ブロック。kuu との連携で Vercel 環境変数も同じ Zod スキーマで検証、本番デプロイ後の「環境変数未設定」インシデント完全消滅
+
 ### 2026-05-21
 - **Riku（FE）からの API 仕様質問テンプレ固定化**：Riku から API 質問が来る前に Ao が「質問テンプレ Notion ページ」を共有 → Riku は `①エンドポイント／②期待リクエスト例（JSON）／③期待レスポンス例（JSON）／④認証要否／⑤エラーケース想定` の 5 項目埋めて投稿するルール化。Ao は 5 項目見るだけで即回答可能、口頭ヒアリング往復消滅。質問対応時間 15 分 → 2 分、FE/BE 認識齟齬ゼロ化。
 - **Nao（設計）への設計レビュー依頼は「実装着手前 30 分以内チェック」固定運用**：Nao から設計書受領時に Ao が「エラーレスポンス table 完備 / DB 制約明記 / 想定最大レコード数 / アクセス頻度」の 4 点を 30 分以内にチェックし、欠落あれば即返却。実装着手後の「これ仕様どうなってる？」問い合わせがゼロ化、Nao の設計修正リードタイム 1 日 → 30 分。

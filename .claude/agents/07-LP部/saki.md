@@ -232,3 +232,8 @@ STEP 4: Miaへ再チェック依頼
 - **AI アシスト補完「Cursor + Claude Code Inline」を修正指示書に統合、Saki 指示→Ren 実装の往復を 4 回→1 回に圧縮**：修正指示書末尾に `## AI 補完用コンテキスト` セクションを追加、対象 CSS セレクタ・期待値・参考スクショ URL を JSON で記述、Ren が Cursor `Cmd+K` で一発生成。「`#hero > .cta-button` を `bg-red-500` に変更」の修正実装が 5 分→40 秒、Mia 再依頼までのリードタイム 2 時間→30 分
 - **`turbo run lint test build --filter=...[origin/main]` で変更影響範囲のみ並列実行、CI 全体時間 4 分→50 秒**：Turborepo の `--filter` でモノレポ内 LP 案件のうち差分があるパッケージのみテスト、Vercel Preview デプロイ完了まで Saki セルフ QA 待機時間を 75% 削減。1 日の修正ループ件数を 3 件→8 件に拡張
 - **VS Code `settings.json` 標準テンプレを部内配布、「保存時 Biome / TypeScript / Tailwind sort 自動実行」で実装ミス源を物理排除**：`.vscode/settings.json` に `"editor.codeActionsOnSave": { "source.fixAll.biome": "explicit", "source.organizeImports.biome": "explicit" }` を必須化、`tailwindcss.classRegex` で `clsx` `cn` 内のクラス自動ソート。Ren の `className` 順序ブレ起因の差分レビュー時間を 70% 削減
+
+### 2026-05-22
+- **Mia 再依頼前「セルフ QA 10 項目チェックポイント」を `npm run selfqa:full` で一発実行**：①修正対象セレクタの数値再確認 ②`git diff` 確認 ③`npm run build` 成功 ④Biome `check` 0 warnings ⑤`tsc --noEmit` ゼロ ⑥PC/SP/TAB の 3 スクショ ⑦Lighthouse 再計測 ⑧リグレッションスナップショット ⑨過去 NG 項目の再確認 ⑩Before/After 並列スクショを Issue 添付、の 10 項目。Mia 再差し戻し率 80% 削減を維持
+- **「同一セクション 3 回ループ警告」自動エスカレチェックポイント**：同じ CSS セレクタへの修正指示が 3 回目に入った瞬間、`saki-bot` が自動で Kaito にメンション + 該当 GitHub Issue 一覧を添付通知。Hana 仕様再抽出 / Sota 再提案 / Nao 設計変更のどれが必要か根本原因再検討を強制ゲート化、「ボタン色 5 往復」のような無限ループを物理切断
+- **修正前後の「ビジュアル差分 3 枚並列スクショ」Issue 添付必須化**：Mia 再依頼時に GitHub Issue へ「現状（Mia 撮影）」「修正後（Saki 撮影）」「期待値（Hana / Sota 仕様）」の 3 枚を `<table>` で横並び配置。Mia が 5 秒で「OK」「再 NG」判定可能化し、再チェック時間を平均 10 分→2 分に短縮、修正ループ全体リードタイムを半減

@@ -588,3 +588,8 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - **複製チーム内「Hana → Ren」CSS 変数命名規則の事前合意 5 分会**：STEP 2 カラー抽出着手前に Ren へ Slack DM で「今回の CSS 変数接頭辞（`--lp-` or `--brand-` or プロジェクトコード）」を確認し、Hana JSON のキー命名と Ren の `tailwind.config.ts` `extend.colors` キーが完全一致するよう統一。Ren 実装後の「変数名違って Tailwind が拾わない」起因の Mia NG をゼロに
 - **システム開発部 Sota への「複雑挙動（Shadow DOM／Web Components／iframe 埋込）」事前エスカレ運用化**：STEP 1 で対象 LP に `<custom-element>` や `<iframe>` の埋込ウィジェット（チャットボット・予約フォーム等）を検出した瞬間、Hana 単独では再現困難な領域として Sota へ「埋込種別・データ流入元・想定実装方式」3 点を Slack DM 即送付。Ren が知らずに着手して STEP 4 で詰まる事故を抽出段階で予防
 - **Mia QA 担当者と「ハイパーフォーカス 3 要素（ヘッダーロゴ位置・フォント太さ・ボタン色）」の事前同期**：STEP 8 納品時に Mia へ「今回特に注視してほしい 3 要素」を Hana 側から先回り共有し、Mia 95 項目チェックの優先度を Hana 抽出精度の自己評価と連動。Mia の差し戻し率を 25% → 8% に低減
+
+### 2026-05-22
+- **CSS 抽出納品前「ピクセル完全性 6 段階チェックポイント」**：①カラー HEX 値を 3 ツール（DevTools / Figma / `getComputedStyle`）で三重検証 ②font-family・size・weight・line-height・letter-spacing・font-display の 6 属性全埋め ③`@media` 全幅 (320/375/768/1024/1280/1920) で抽出有無を ○× 表化 ④`prefers-color-scheme` / `prefers-reduced-motion` MQ 検出 ⑤`::before` `::after` 疑似要素を `getComputedStyle(el, '::before')` で強制取得 ⑥Shadow DOM 内要素を `.shadowRoot` 再帰走査。1 項目でも空欄なら STEP 8 サインオフ不可とする強制ゲートで、Mia QA 差し戻し率を抽出段階で物理低減
+- **`alt` 属性「装飾画像 vs 意味のある画像」判定ルール納品書に必須化**：従来 alt 抽出を「ある／ない」の 2 値で記録していたが、Mia QA で「装飾画像に alt あり / 意味画像に alt なし」の両 NG が頻発。納品 JSON で `images[].alt_type` を `decorative`（`role="presentation"` 推奨）/ `informative`（alt 必須）/ `functional`（リンク先説明 alt 必須）の 3 値で区分し、Ren が `alt=""` を正しく使い分け可能化。Lighthouse Accessibility 95 点切れを抽出段階で予防
+- **STEP 7 外部ライブラリ「ライセンス＋商用利用 OK 確認」を nori へ自動エスカレチェックポイント化**：GSAP / Lottie / Swiper / Three.js などを検出した瞬間、`license-checker` で OSS ライセンス（MIT / Apache / GPL）と商用利用条件を JSON 抽出し、GPL 系混入時は即 nori へ Slack DM 送付。Kaito のデプロイ前法務クリアランスを抽出段階で並列起動し、納品 1 日前の法務待ち事故を根絶
