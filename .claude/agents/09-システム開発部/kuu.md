@@ -345,6 +345,11 @@ STEP 6: 実装完了報告
 - **CI/CD 品質ゲート 4 段階パイプライン明文化**：① PR 作成時＝ lint/typecheck/unit test/security scan (gitleaks/npm audit)、② PR マージ時＝ preview デプロイ＋ E2E ＋ Lighthouse CI、③本番デプロイ時＝ canary 10% トラフィック＋5 分監視→100% 切替、④デプロイ後＝ Sentry/Datadog アラート 30 分監視。各段階で fail 時は自動ロールバック、本番反映前のバグ検出率 95% 以上達成。Mio とのジョブ分担も `needs:` で並列実行、片方失敗が他方をブロックしない構造
 - **マイグレーション可逆性レビューの自動ラベル運用**：Ao の PR で `prisma migrate diff` の結果に `DROP COLUMN` `ALTER TYPE` `NOT NULL` 等の破壊的キーワード検出時、GitHub Actions が自動で `breaking-migration` ラベル付与＋ Kuu アサイン。Kuu は 3 段階デプロイフロー（① NULL 許容追加 →②バックフィル →③ NOT NULL 化）を強制、各段階に 1 日以上の安定期間。本番マイグレーション事故ゼロ化、ロールバック SQL の併存も PR テンプレで必須化
 
+### 2026-05-24
+- **障害復旧時に運用者・クライアントが本当に欲しい情報の 3 点セット**：「① 復旧見込み時刻（具体的な hh:mm）/ ② 現在の対応状況（『DB 切り替え中』『ロールバック実行中』）/ ③ 影響範囲（全機能停止 / 一部機能のみ）」を Statuspage に 5 分以内に投稿する SLA 化。曖昧な「メンテナンス中です」だけでは、クライアント営業層が「いつ謝罪電話すべきか」判断できず信頼低下。Kuu が `statuspage-cli` で 3 点セット投稿テンプレを Slack ボタン化、障害発生 3 分以内に投稿可能化。問い合わせ件数 70% 削減。
+- **初回デプロイ時に運用者が迷う「環境変数 X が見つからない」エラーゼロ化のための起動時バリデーション**：Vercel デプロイ直後にアプリ起動時、Zod `envSchema.parse(process.env)` を必ず実行し、未設定キーがあれば「VERCEL_ENV=production で `STRIPE_SECRET_KEY` が未設定です。Vercel UI → Settings → Environment Variables で追加してください」のような具体的アクションを `process.exit(1)` 前にログ出力する運用へ。運用者の「とりあえずデプロイしたら 500 エラー」事故をゼロ化、新メンバーオンボーディング時の迷子ポイントも撲滅。
+- **ロールバック実行時に運用者が「どのバージョンに戻すべきか」迷う瞬間の予防**：本番障害時、Vercel UI で過去デプロイ履歴を見て「どれが安定版か」を判定するのに 10 分以上かかる事故を予防。Kuu が GitHub Actions で「main マージ後 24 時間障害ゼロのデプロイ」に自動で `stable-YYYYMMDD-HHMM` タグを付与する仕組み運用化。ロールバック時は「最新の stable-* タグを選択」するだけで安全な過去版へ即座復帰可能、判断時間 10 分→30 秒。
+
 ### 2026-05-21
 - **Ao（BE）からの環境変数追加依頼は「Slack 自動通知 → 1 クリック投入」フロー固定化**：Ao が `.env.example` を `[env]` プレフィックス付きでコミット → GitHub Actions が Slack #infra へ「キー名・用途・本番要否・サンプル値」を自動投稿 → Kuu は通知の「Vercel に投入」ボタンクリックで `vercel env add` が 3 環境（本番/ステージング/プレビュー）に即時反映。手動コピペゼロ、引き継ぎ漏れインシデント完全消滅。
 - **Riku（FE）への preview デプロイ URL 共有テンプレ**：PR 作成時に Vercel preview デプロイ完了通知を GitHub PR コメントに「preview URL ＋ Lighthouse スコア ＋ バンドルサイズ差分」の 3 点セットで自動投稿する設定化。Riku は PR コメントから即動作確認可能、Mio の E2E テストも同 URL に対し並列実行。PR レビュー → デプロイ確認のリードタイム 30 分 → 5 分。

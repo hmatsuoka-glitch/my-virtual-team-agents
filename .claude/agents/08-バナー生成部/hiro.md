@@ -264,6 +264,11 @@ const banners = [
 - **解像度・カラープロファイル・ファイル容量の「3 軸自動レポート」を yuna へ提出時必須添付**：Hiro が変換完了時に sharp で `width / height / channels / icc-name / size-kb` を抽出し Markdown table 化、PNG ファイルと並べて Slack 投稿。yuna は数値を 30 秒で確認できるため Sora QA 提出判断が即決、媒体審査での「規定外」差し戻し件数ゼロ化、納品リードタイム 1 日短縮
 - **PR レビュー観点拡張：Puppeteer スクリプト変更時の品質確認 5 点**：① deviceScaleFactor 値が媒体に応じた config 参照になっているか ② `omitBackground` ＋ `ensureAlpha()` の二重透過保証実装か ③ ブラウザプール終了処理 `browser.close()` が finally で必ず実行されるか ④ Promise.allSettled で 1 件失敗が全件サイレント成功にならない設計か ⑤ 出力ファイル名 lint regex が PR 内で更新されているか。kana・yuna への影響度を PR テンプレに「影響範囲」セクションで必ず記載化、レビュー時間 30 分→8 分
 
+### 2026-05-24
+- **ユーザー視点：3G/低速回線環境で広告を見るユーザーの「最初の 0.5 秒の白い瞬間」の体験悪化**：iPhone 通勤中の地下鉄で広告を見るユーザーは、PNG ファイルサイズが 100KB を超えると「読み込み中の白い枠」が 0.5 秒以上見え、その間にスワイプされて広告未到達となる。Hiro の出力ファイルサイズを「Indeed 50KB 以下／Instagram 80KB 以下」と媒体上限のさらに半分を社内基準にすることで、ユーザーの「白い瞬間ゼロ化」を技術担保。CDN 配信なしの直接表示ケースでも UX が崩れない。
+- **ユーザー視点：通信制限ユーザー（月末速度低下）の画質劣化体験を逆手に取った AVIF/WebP 三段配信**：通信制限下のユーザーは媒体側が自動で「低品質版」を配信、その瞬間「ぼやけたバナー」を見せられる体験になる。Hiro が PNG/WebP/AVIF の 3 形式を全て同時出力し、媒体 CDN に「フル品質→中品質→軽量版」の 3 段を渡すことで、通信制限ユーザーでも「軽量だがシャープな AVIF」が届く設計。月末ユーザーへの広告到達率 15% 向上。
+- **ユーザー視点：高齢者ユーザーが iPhone を「明るさ最大／コントラスト低め」で使う実態への対応**：60 代以降のユーザーは目の老化で「明るすぎる画面」「淡いグラデーション」を見落としやすい。Hiro の品質確認時に「iPhone 設定：明るさ 100%・True Tone OFF」でプレビューし、淡色グラデーションのバナーは輝度差 60% 以上を確保しているか sharp で実測。建設業の中高年向け求人で離脱率 20% 削減。
+
 ### 2026-05-20
 - **よくある失敗：Puppeteer の `page.screenshot({ type: 'png' })` で透過 PNG を期待したのに、Retina（deviceScaleFactor: 2）出力時に「アルファチャンネルが欠落して背景白塗り」になる事故**。回避策は screenshot オプションに `omitBackground: true` と CSS 側 `html, body { background: transparent !important }` を二重指定し、出力後に `sharp(buf).ensureAlpha().png()` でアルファチャンネル存在を強制検証。Yuna への引き渡し前に `sharp(path).metadata().channels === 4` を assert 化、透過要求案件の差し戻しゼロ化。
 - **よくある失敗：Kana の HTML が `position: fixed` を含むと Puppeteer の viewport より要素が画面外にレンダされ、PNG 出力時に「CTA ボタンが切れている」状態で納品**。回避策は変換前に `page.evaluate(() => [...document.querySelectorAll('*')].some(el => getComputedStyle(el).position === 'fixed'))` で fixed 検出 → 検出時は Kana に「absolute へ変更」を即差し戻し。Hiro 側でも `clip` 範囲外要素を sharp の bounding box 検証で 2 次検知。

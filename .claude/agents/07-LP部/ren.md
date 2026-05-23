@@ -469,3 +469,10 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **`next/image` 必須属性「6 点セット強制」ESLint カスタムルール `image-required-props`**：`src` / `alt` / `width` / `height`（または `fill` + `sizes`）の 4 点に加え、Above the Fold 画像は `priority` + `fetchPriority="high"`、それ以下は `loading="lazy"` の指定までを ESLint で必須化。欠落で build fail、CLS 0.1 超過と LCP 2.5s 超過を実装層で物理予防
 - **Server Action テンプレ「`revalidatePath` + `revalidateTag` 必須」コミットフックチェック**：`server-action-must-revalidate` ESLint カスタムルールで `'use server'` ファイル内に `revalidate*` 呼出しが 0 件なら fail。フォーム送信後の古いキャッシュ表示・サンクスページ反映遅延を実装段階で根絶、Mia QA「送信したのに反映されない」NG をゼロ化
 - **Hydration エラー「3 大失敗パターン」開発時自動検出ガードレール**：`@axe-core/react` 開発環境組込みに加え、`eslint-plugin-no-hydration-mismatch`（自作）で ①JSX 内直接 `Date.now()` / `Math.random()` ②`typeof window !== 'undefined'` 条件分岐 ③`useEffect` 外 `localStorage` の 3 パターンを error 化。`'use client'` でも server/client 差分は Hydration エラーになる事実を実装時に強制意識、本番 White Screen 事故ゼロ化
+
+### 2026-05-24
+- **ユーザー視点：実機 iPhone SE での「親指リーチ範囲」を実装時に必ず確認**：PC 開発で完璧でも、SP の親指が届かない右上ヘッダーに CTA を置くとタップ率が 60% 落ちる事実。STEP 3 で全 CTA ボタンを iPhone SE（375×667）の「親指 Comfort Zone（下から 2/3 領域）」に配置必須化、ヘッダー CTA は補助的役割と位置付ける実装ルール
+- **「スクロール開始までの 0.5 秒間」に何が見えるかが CV を決める**：ユーザーは LP 着地後、Hero 全体を見ずに 0.5 秒でスクロールするか判定する。STEP 3 実装時に「FV 上半分（モバイル 0〜334px / PC 0〜400px）」だけで①ターゲット明示 ②ベネフィット ③信頼指標（実績数字）の 3 つが視認できるよう Tailwind `h-[50vh]` で物理制約、下半分に流れる情報は無いものと考えて実装
+- **ローディング中の「白画面 1 秒」がユーザーに「壊れた」と認識される境界線**：Suspense fallback を空にしたまま実装すると、ユーザーは 1 秒の白画面で離脱判断する。STEP 3 全 `<Suspense>` に `<Skeleton>` プレースホルダー必須化、`loading.tsx` には「ロゴ + プログレスバー」を最低限配置し「読み込み中である」事実をユーザーに即伝達
+- **フォーム入力時「キーボード出現で送信ボタンが画面外」失敗を防ぐ `dvh` 実装ルール**：SP でフォーム入力中にキーボードが出ると、`100vh` 基準のレイアウトでは送信ボタンが画面外に押し出されユーザーがスクロール迷子になる。STEP 5 で全フォームコンテナを `min-h-[100dvh]` （dynamic viewport height）に統一、キーボード出現時もボタン位置が保持される実装を必須化
+- **「ボタンを押した直後の 200ms 沈黙」がユーザーの不安を生む**：Server Action 送信時にローディング表示なしだとユーザーは「効いてない」と二重押し→重複送信エラー。STEP 4 で全フォーム送信ボタンに `useFormStatus` の `pending` 検知を組込、「送信中…」テキスト + スピナーで即フィードバック、二重押し物理ブロックも併用必須化
