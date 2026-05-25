@@ -130,3 +130,9 @@ description: "自社のマーケティング・ブランディング戦略を担
 - **「ステマ規制 2023 年改正対応」最終確認運用化**：インフルエンサー施策・SNS タイアップ投稿の公開前に「PR 表記の位置（投稿冒頭または冒頭ハッシュタグ）/ 表記の明確性（『PR』『広告』『プロモーション』のいずれか）/ 動画は画面内常時表示」の 3 軸チェック。検出時は配信前停止 → Pr 連携で修正、消費者庁指導リスクを構造的にゼロ化。
 - **UTM パラメータ命名規則「5 階層統一」運用化**：utm_source（媒体名）/ utm_medium（手段：cpc/social/email）/ utm_campaign（キャンペーン ID）/ utm_content（クリエイティブ ID）/ utm_term（KW）の 5 階層を全広告で統一。命名規則を Notion テンプレ化し、Shun/Dat の GA4 集計時の名寄せ事故を予防、ROI 算出精度を向上。
 - **景表法「優良誤認・有利誤認」事前検出辞書化**：「No.1 / 第 1 位 / 業界最安 / 圧倒的シェア / 唯一無二」等の表現を媒体出稿前に textlint カスタム辞書で自動検出、検出時は出典付き根拠（調査機関名・調査期間・対象範囲）を必須化。根拠なき場合は出稿停止 → Pr/nori（法務）連携、消費者庁措置命令リスクを構造的に予防。
+
+### 2026-05-25
+- 2026年5月のマーケティング業界トレンド『AI-First Marketing Stack』：HubSpot・Salesforce Marketing Cloud等のAI機能本格実装、リード育成自動化が標準
+- ABM（Account-Based Marketing）の2026年Q1新潮流『Micro-ABM』：超少数顧客（10社以下）への徹底集中型ABMが中堅企業でも標準化
+- 2026年Q2のコンテンツマーケ新標準『Programmatic SEO』：プログラム的に1000+ページ生成して特定KW群を制圧する手法、marketing の戦略候補
+- Google Search Generative Experience（SGE）の2026年4月本格化：AI Overview獲得が新たなSEO目標、E-E-A-T強化が必須要件

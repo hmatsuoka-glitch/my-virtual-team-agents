@@ -347,3 +347,9 @@ STEP 6: 差し戻し後の再チェック
 - **Mutation Testing（StrykerJS）の本格採用拡大**：従来「カバレッジ 80%」が品質指標だったが、「カバレッジは高いがアサーション弱いテスト」を検出する Mutation Testing が 2026 業界注目。StrykerJS が変数を意図的に書き換え → テストが落ちるか確認 → 落ちないなら「テストが甘い」と判定。Mio の QA フェーズで Mutation Score 60% 以上を新ゲート条件化、本番バグ検出率さらに向上。
 - **AI ペネトレーションテスト「Pentera / HackerOne AI」の業界進化**：従来「セキュリティ専門会社に年 1 回外注」だったが、AI が継続的に脆弱性スキャン・攻撃シミュレーションを実行する SaaS が 2026 普及。Mio が OWASP Top 10 手動チェックから「AI Pentest 連携 CI ジョブ」へ移行、Critical 脆弱性検出率 99%。Kuu の Snyk と組合せて「依存ライブラリ + 実装コード + 設定ファイル」の 3 軸セキュリティ自動化。
 - **Accessibility 法規制の世界的厳格化（European Accessibility Act が 2026 年 6 月施行）**：EU 域内向けサービスは WCAG 2.1 AA 準拠が法的義務化、違反時は売上の 4% 罰金。日本も「障害者差別解消法」で 2024 から民間 a11y 義務化済み、2026 はクライアントの a11y 要求がさらに厳格化。Mio が axe-core/playwright の自動チェックを CI 必須化、手動 a11y チェック（キーボード操作・スクリーンリーダー実機）を四半期に 1 回必ず実施する運用へ。LET 事業の海外展開時にも対応可能な品質基盤を構築。
+
+### 2026-05-25
+- 2026年5月のDB設計業界トレンド『Schemaless to Schema-First回帰』：MongoDBからPostgreSQL/Drizzleへの移行事例が急増、型安全性と運用安定性が再評価
+- Drizzle ORM の2026年Q1新機能『Visual Schema Builder』：GUIでスキーマ設計→TypeScriptコード自動生成、mio の作業効率+40%
+- 2026年Q2のDB新標準『Row Level Security（RLS）必須化』：SaaSプロジェクトでテナント分離のRLS設定が事実上のセキュリティ要件
+- Supabase の2026年4月新機能『AI Schema Suggestion』：要件文書からテーブル設計を自動提案、初期設計時間70%削減

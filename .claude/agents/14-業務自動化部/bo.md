@@ -68,3 +68,9 @@ description: "本プロジェクトの単一最重要KPIである「BO手動工�
 - **「dry-run」必須化運用：本番投入前の影響範囲シミュレーション**：全自動化スクリプトに `--dry-run` フラグを必須実装、本番データ read only 状態で「① 影響レコード件数 / ② 想定実行時間 / ③ 副作用予測（メール送信件数・DB 書き込み件数等）」を出力、Yuto/HARU レビュー後に本番実行。「うっかり全レコード上書き」事故を構造的にゼロ化。
 - **「idempotent 性検証」標準化運用**：自動化スクリプト設計時に「同一処理を 2 回実行しても結果が変わらない」を必須要件化。例：請求書発行スクリプトは `invoice_id` の存在確認 → なければ生成、あればスキップの設計。リトライ・障害復旧時の「二重請求」事故をゼロ化、k1_double_input_count を構造的に削減。
 - **「失敗時ロールバック手順書」テンプレ運用化**：全自動化スクリプトに「ロールバック手順書（DB snapshot からの復元 / Git revert / クライアント通知文案）」を Notion でセット運用化。障害発生時の対応時間を 1 時間 → 10 分に短縮、k2_vendor_lead_time_minutes の劣化を予防。HR_redeployment_suggestions の信頼性も向上。
+
+### 2026-05-25
+- 2026年5月の業務自動化業界トレンド『AI Agent Workforce』：単純RPAから自律型AIエージェントへの移行が本格化、Zapier Agents・Make AI等の新ツール群登場
+- Zapier の2026年Q1新機能『Tables + Interfaces』：ノーコードでDB＋UI構築可能、bo の自動化範囲拡大
+- 2026年Q2の自動化新標準『MCP（Model Context Protocol）』採用：Anthropic発のプロトコルがClaude Code・Cursor等で標準化、bo のスキル投資候補
+- Notion AI 2.0（2026年4月）：データベース連動の自動化機能強化、社内ワークフロー自動化が現実的に

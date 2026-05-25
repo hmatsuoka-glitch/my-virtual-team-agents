@@ -356,3 +356,9 @@ STEP 6: 実装完了報告
 - **Mio（QA）との CI/CD 品質ゲート分担明確化**：Kuu は「インフラ品質」（環境変数・シークレット・脆弱性・ロールバック・DORA Metrics）担当、Mio は「コード品質」（カバレッジ・E2E・a11y・パフォーマンス）担当を GitHub Actions の独立 Job として `needs:` 並列実行。片方失敗でも他方の結果が PR コメントに表示、レビュー責任の境界が Job 名で物理的に明示。パイプライン時間 8 分 → 3 分、見落としゼロ。
 - **07-LP複製部（kaito チーム）との Vercel プロジェクト分離運用標準化**：kaito の静的 LP は `xxx-lp` プロジェクト、kai チームのアプリは `xxx-app` プロジェクトで完全分離。同一ドメイン下で Edge Middleware が `/lp/*` ↔ `/app/*` を振り分け、各チーム独立デプロイ可能。kaito の LP 修正で kai のアプリが巻き込みリリースされる事故ゼロ、ロールバックも独立実行可能。
 - **02-クライアント管理部（Akari）への稼働状況レポート自動化**：毎週金曜に Vercel Analytics・Sentry・DORA Metrics を集計し Notion DB「Kuu 週次稼働レポート」へ「①稼働率（SLA 達成状況）／②過去 7 日トラフィック／③エラー率／④デプロイ頻度＋MTTR」を自動投稿。Akari がクライアント月次レポート作成時にワンクリック参照可能、SLA 数値根拠を即時提示。クライアント説明工数 50% 削減、信頼度向上。
+
+### 2026-05-25
+- 2026年5月のAPI設計業界トレンド『tRPC 11』採用拡大：従来REST/GraphQLからtRPC移行が中規模プロジェクトで標準化、型安全な開発体験
+- API最新仕様『OpenAPI 4.0』正式リリース（2026年Q1）：従来3.x系から大幅刷新、kuu の既存プロジェクトの段階移行計画推奨
+- 2026年Q2のAPI設計新潮流『Async API for Real-Time』：WebSocket・Server-Sent Events を仕様駆動で設計する Async API 3.0 標準化
+- Vercel AI SDK 5.0（2026年4月）：LLM連携APIの実装が30行→5行に短縮、kuu のAI機能組み込みで活用価値

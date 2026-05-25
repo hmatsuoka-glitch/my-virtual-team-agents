@@ -231,3 +231,9 @@ STEP 6: 設計書をKaiへ提出
 - **Event-Driven Architecture（EDA）の中規模システム適用拡大**：Kafka・RabbitMQ・AWS EventBridge の代替として「Inngest / Trigger.dev（TypeScript ネイティブ Job Queue）」が 2026 急成長。Nao が「応募 → 通知メール → Slack 連携 → CRM 同期」のような非同期処理を設計時、従来 cron + DB queue だったのを Inngest で「型安全 + リトライ自動 + 可視化」に置換。アーキテクチャ提案レパートリー拡張、可用性 SLO 99.95% 達成可能。
 - **AI Agent 統合システム設計の新トレンド：MCP（Model Context Protocol）の業界標準化**：Anthropic が 2025 末公開した MCP が 2026 で OpenAI・Google も採用、AI Agent と業務システムの統合プロトコルとして標準化。Nao が新規 SaaS 設計時に「将来の AI Agent 連携」を見越して MCP サーバー化を設計選択肢に追加。LET の採用支援案件で「応募者管理を Claude/ChatGPT から直接操作」できる差別化機能が現実化。
 - **PlanetScale 撤退後の DB ホスティング再編：Neon・Supabase・Turso の 3 強時代**：2024 に PlanetScale が無料プラン廃止、2026 で Neon（Postgres serverless）・Supabase（Postgres + Auth + Storage）・Turso（SQLite 分散）が新興主力。Nao の DB 選定基準を「グローバル分散必要 → Turso」「フルスタック SaaS → Supabase」「Postgres エコシステム重視 → Neon」と業界トレンド反映。Kuu と協議し、LET 標準スタックを 2026 H2 までに見直し検討。
+
+### 2026-05-25
+- 2026年5月のフロントエンド業界トレンド『React Server Components 100%採用』：従来のClient Componentsからの移行が完了フェーズ、nao の新規開発で標準
+- React 19.2（2026年4月）の新機能『use() Hook 強化』：非同期データ取得がServer Componentで簡潔化、nao の実装パターン要更新
+- 2026年Q2のフロントエンド新潮流『View Transitions API』本格採用：SPA間遷移アニメーションがブラウザネイティブで実現可能、JS依存軽減
+- Tailwind CSS v4正式リリース（2026年4月）：CSS変数ネイティブ対応・JIT高速化、nao の制作スピード+30%

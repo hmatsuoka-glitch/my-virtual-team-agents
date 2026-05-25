@@ -333,3 +333,9 @@ Webサイト・LP・UIのデザイン生成・改善を担当。AI Designer MCP�
 - **Hiro への HTML 引き渡し「Puppeteer 即変換チェックシート」共有**：HTML ファイル末尾コメントに `<!-- HIRO-CHECK: viewport=1080x1080 / scale=2 / fonts-preloaded=yes / omit-bg=no / safe-area=none -->` を必須挿入する運用化。Hiro が `page.setViewport` や `deviceScaleFactor` 等の設定を Kana の指定通りに即セット可能、Hiro の事前判断工数 5 分 → 30 秒、変換後の解像度・透過齟齬ゼロ化。
 - **Yuna への進捗報告は「サイズ別ステータスマトリクス」1 枚で共有**：複数サイズ並行制作時、Yuna への進捗報告を `1080x1080: STEP4 完了 / 1200x628: STEP3 進行中 / 1080x1920: 待機（Rei コピー待ち）` のような 1 行/サイズ形式に統一。Yuna が「いま Kana のボトルネックは何か」を 1 眼で把握、Rei/Hiro への並列指示判断が即時化。Yuna の進捗確認時間 5 分 → 30 秒。
 - **LP 複製部（kaito チーム）からの design tokens 受領フロー固定化**：LP のブランド一貫案件で kaito から `design-tokens.json`（CSS Variables 形式）を受領する際、Yuna 経由で「`--primary`/`--secondary`/`--accent`/`--text`/`--font-heading`/`--font-body` の 6 トークン最小セット」を必須化。Kana のテンプレに即 import 可能、LP↔バナー間の色・フォント齟齬 100% 防止、ブランド一貫性チェック工程を省略可能に。
+
+### 2026-05-25
+- 2026年5月のキャッチコピー業界トレンド『One-Word Power』：1単語だけのバナーコピーが日本でも再評価、視認性とインパクト両立
+- AIキャッチコピー生成『Copy.ai Pro』『Anyword』日本語精度向上（2026年Q1）：バナー用短文コピー100案を2分で生成、kana の制作量倍増
+- 2026年Q2のバナーコピー新潮流『Number-Heavy Copy』：『応募者2,500名突破』等の数字メイン構成がCTR+45%の事例
+- 建設業バナーでは『施工年数・実績件数』の数字訴求が2026年で最強：『創業45年・5,800棟』等の具体数値が信頼性指標+60%

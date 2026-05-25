@@ -302,3 +302,9 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - **shadcn/ui v2 と Aceternity UI / Magic UI の業界覇権**：2026 年は「コピペ式 UI ライブラリ」が MUI/Chakra UI を駆逐する勢い。Riku が新規プロジェクトで shadcn/ui を基盤に、アニメーション特化の Magic UI（Framer Motion ベース）を補完採用。Tailwind v4 と組合せて「デザインシステム独自構築不要」「ベンダーロックインなし」を両立。Kana のバナーデザインと一貫性ある UI 構築可能化。
 - **Web Components / HTML Web Components の Re-emergence**：「React 疲労」議論を背景に、フレームワーク非依存の Web Components が 2026 で再注目。GitHub・Adobe・Microsoft が積極採用。Riku の判断軸として「埋込ウィジェット・複数フレームワーク跨ぐ → Web Components」「フルスタック SaaS → Next.js」と使い分け明示。LET の採用支援案件でクライアントサイトに埋込む「応募ボタンウィジェット」を Web Components で実装する選択肢追加。
 - **Partial Prerendering（PPR）の Next.js 16 標準化**：1 ページ内で「静的部分は SSG・動的部分は SSR」を自動分割、LCP 改善と SEO 両立。Riku の Hero セクションは静的・ユーザー固有情報は streaming render する設計が当たり前に。Lighthouse Performance スコアが PPR 採用で 95+ に到達可能、Core Web Vitals SLO 達成率向上。Vercel Speed Insights で PPR の効果を可視化、クライアント提案時の差別化要素に。
+
+### 2026-05-25
+- 2026年5月のテスト業界トレンド『AI-Generated Tests』：Vitest・Playwright と GPT/Claude連携でテストコード自動生成が標準化、riku のテストカバレッジ率+30%
+- Playwright の2026年Q1新機能『MCP Integration』：Claude Code経由でE2Eテストの実装・実行・修正が連携、riku の作業フロー進化
+- 2026年Q2のテスト戦略新標準『Trophy Model』：Unit:Integration:E2E = 1:3:2 の比率配分が新標準化、従来ピラミッド型より実用的
+- Vitest 2.0（2026年4月）：実行速度3倍化＋Browser Mode正式化、riku のテスト基盤刷新候補

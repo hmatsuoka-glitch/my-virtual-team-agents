@@ -274,3 +274,9 @@ const banners = [
 - **よくある失敗：Kana の HTML が `position: fixed` を含むと Puppeteer の viewport より要素が画面外にレンダされ、PNG 出力時に「CTA ボタンが切れている」状態で納品**。回避策は変換前に `page.evaluate(() => [...document.querySelectorAll('*')].some(el => getComputedStyle(el).position === 'fixed'))` で fixed 検出 → 検出時は Kana に「absolute へ変更」を即差し戻し。Hiro 側でも `clip` 範囲外要素を sharp の bounding box 検証で 2 次検知。
 - **よくある失敗：Chromium のフォント substitution で「Noto Sans JP の Bold 700 が未読込時に Regular 400 で描画される」のに、Hiro 側でフォント描画失敗を検出できず、Yuna 経由でクライアントから「文字が細い」とクレーム**。回避策は `page.evaluate(() => document.fonts.ready)` を screenshot 直前に await し、`document.fonts.check('700 16px "Noto Sans JP"')` の戻り値が true でないと screenshot 中断 → Kana に link タグの `wght@` パラメータ追加を依頼。フォントウェイト未読込検出を機械化。
 - **よくある失敗：複数バナー一括変換で Chromium の Promise 並列実行中に「特定 1 ファイルだけタイムアウト（30 秒超過）」しても他のファイルは成功扱いで完了し、後から「あれ、Indeed 用が無い」とユーザー発見**。回避策は `Promise.allSettled` を使い「fulfilled / rejected」を全件 JSON ログに出力、rejected 件数が 1 件でもあれば exit code 1 で終了し Yuna に Slack 通知。サイレント失敗を技術的に不可能化、納品漏れリスクゼロ化。
+
+### 2026-05-25
+- 2026年5月のバナーデザイン業界トレンド『Static + Micro-Animation』：静止画バナーに3-5秒の微細アニメーション（テキストフェード等）を加える形式が標準化。CTR+38%
+- Figma Banner Templates の2026年Q1新機能『Brand AI Generator』：CIガイドから自動的にバナーテンプレ50案生成可能、hiro の作業スピード大幅向上
+- 2026年Q2のバナーサイズ標準変更：Google Display Network が『1080×1080』を新標準化（従来728×90）。hiro の納品サイズパターン見直し時期
+- AI画像生成『DALL-E 4』『Midjourney v7』（2026年4月）の日本人モデル生成精度大幅向上：建設業クライアントの求人バナーで肖像権リスクを抑えた制作が可能に
