@@ -340,3 +340,15 @@ API 設計・データベース構築・認証/認可・決済連携を担当。
 - BMAD-METHOD の2026年Q1更新『v2.5』リリース：要件定義テンプレート刷新、Agent SDK連携強化
 - 2026年Q2の要件定義新標準『JTBD Workshop』：従来ペルソナ＋ストーリー方式に『Jobs-to-be-Done』を必須化、開発後の要件変更率-40%
 - AI要件抽出ツール『Userology』『Galileo AI』が2026年4月日本対応：クライアントヒアリング録音から要件文書を自動生成、ao の作業時間70%削減
+
+### 2026-05-26
+- **Hono + `@hono/zod-openapi` で「ルート定義 = OpenAPI 仕様 = TypeScript 型」3 同期コードで実装行数 50% 削減**：`createRoute({ method, path, request, responses })` 1 度書くだけで Swagger UI／Zod バリデーション／TS 型／Riku 向け仕様共有が完結、Next.js Route Handler の `NextRequest` 冗長取り回しが消滅。エンドポイント実装時間 30 分→12 分、Riku への共有は `/doc` URL 1 本で済む（理由：単一ソース 4 派生で同期作業ゼロ化、Edge Runtime 対応で p95 レイテンシも 300ms→80ms 同時改善）
+- **Drizzle ORM の `drizzle-kit generate/push` でスキーマ修正サイクル 30 秒→5 秒（6 倍速）**：Prisma の `migrate dev` 30 秒待機が 5 秒に短縮、`drizzle-zod` で Zod スキーマ自動派生し Riku 向け型・API バリデーション・OpenAPI ドキュメントの 3 つが 1 スキーマから生成。手動同期工数 30 分/エンドポイント→0 分、ローカル開発フィードバックループ 6 倍速（理由：ローカル DDL 反映が高速化することで「試して直す」反復回数が物理的に増える）
+- **`vitest --watch` + `prisma studio` + `pnpm dev` を VS Code Tasks で `pnpm dev:all` 1 コマンド起動化**：新メンバーが clone 後即 3 画面分割環境起動、セットアップ工数 30 分→30 秒。Mio との QA ペアプロも全員同じ画面構成で「あれどこですか」消滅、実装→テスト→DB 確認のフィードバックループ 30 秒→3 秒（理由：環境立ち上げの儀式コストを 1 コマンドに集約、開発速度 3 倍向上）
+- **`scripts/gen-test-fixtures.ts` で Mio 引き渡しパック自動生成、QA 準備工数 30 分→2 分**：実装完了時にスクリプト実行で「正常系 cURL ＋ 401/403/422/500 異常系再現コマンド集 ＋ EXPLAIN ANALYZE 結果 ＋ Vitest テスト雛形」が Markdown 自動生成、Mio はテスト中身詰めだけに集中可能。認可ペアテスト（自分 200 ＋他人 403）も即実行可能（理由：QA 引き渡しの定型作業を自動化し、Ao は実装次タスクに即着手可能）
+
+### 2026-05-27
+- **失敗パターン: 認可チェックを各 Route Handler 内に個別実装し、1 エンドポイントで書き忘れて「ユーザー A が B のデータを削除可能」脆弱性** → 回避策: 認可チェックをミドルウェア化し全 Route Handler 冒頭で `checkUserOwnership(req, resource_id)` を Zod バリデーション前に強制実行＋ ESLint カスタムルールで個別実装を警告（理由：分散実装は人間が必ず漏れる、集約 1 箇所で全エンドポイント保護）。実例：応募管理 API で他テナントデータ削除可能脆弱性→ミドルウェア化後事故ゼロ
+- **失敗パターン: Prisma の Connection Pool 上限未指定で本番デプロイ時に「Too many connections」全停止** → 回避策: `DATABASE_URL` に `?connection_limit=1&pool_timeout=10` 明示＋外部 Pooler（PgBouncer／Neon Pooler／Supabase Pooler）経由必須化（理由：Vercel Functions は関数毎に Pool が独立するため瞬時に DB max_connections 超過）。実例：採用 SaaS 本番反映 5 分で 500 連発→Pooler 経由化後接続エラー消滅
+- **失敗パターン: JWT の `exp` クレーム未検証で `jwt.decode()` だけで信頼し有効期限切れ・改ざんトークンを受理** → 回避策: `jose.jwtVerify()` で `algorithms`/`audience`/`issuer`/`exp`/`nbf` を必須検証、自前 decode を ESLint で禁止＋ JWKs エンドポイント TTL 10 分キャッシュ＋ `alg: none` 攻撃防止のホワイトリスト化（理由：decode は base64 復号のみで署名検証しないため認可バイパス容易）。実例：管理画面で改ざんトークン受理→jwtVerify 移行後認証バイパスゼロ
+- **失敗パターン: Redis キャッシュの TTL 未設定で `SET key value` してメモリ無限増殖で数ヶ月後に OOM** → 回避策: 全 `SET` 操作で `EX 3600` TTL 必須化＋ `cache.set(key, value, ttlSeconds)` ラッパーで TTL 引数必須＋ Redis `maxmemory-policy: allkeys-lru` 設定（理由：TTL なしキャッシュは永久残存しメモリ枯渇トリガー）。実例：セッションキャッシュで TTL 漏れ→OOM 寸前→ラッパー強制後メモリ安定

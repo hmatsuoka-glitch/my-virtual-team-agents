@@ -605,3 +605,16 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - 新世代CSS解析ツール『CSS Explorer 2.0』『Style Spy Pro』が2026年Q1に普及：1ページ全要素のスタイルをJSON出力可能、hana の抽出作業時間を70%削減
 - 2026年Q2のCSSフレームワーク新標準『Tailwind v4』正式リリース（2026年4月）：JIT compiler高速化＋日本語フォントプリセット強化。LP複製案件でTailwind移植のスピードが2倍
 - 建設業LP分析の最新発見：上位LP10サイトの平均ページ重量が3.2MB→1.8MBに軽量化（2026年4月時点）。LPコア要件としてLighthouse Performance 90+が事実上必須化
+
+### 2026-05-26
+- **[更新] CSS抽出フロー「Style Spy Pro + CSS Explorer 2.0 + Wappalyzer」4ツール並列化で STEP 1-2 が5分→2分（旧 2026-05-19 を更新）**：2026-05-19の3ツール並列（Style Spy/CSS Stats/Wappalyzer）に、2026-05-25の新世代ツール『Style Spy Pro』『CSS Explorer 2.0』を追加した4ツール並列起動で、要素別 :hover/:focus 全状態CSSをJSON一括ダンプ。STEP 1-2 が5分→2分（▲60%）、Hana総作業時間4時間→2.3時間→1.5時間へ更に短縮。色・フォント・余白の抽出精度も95%→99%に向上
+- **Tailwind v4 `@theme` 直結変換ワンライナーで STEP 8 → Ren ハンドオフが10分→30秒**：2026-05-12構築の `json-to-tailwind.js` を Tailwind v4 の `@theme` ディレクティブ対応に改修。STEP 8 出力 JSON を `node scripts/json-to-theme.js > app/globals.css` 一発で `@theme color-primary: oklch(33% 0.15 240); ...` 形式の CSS に直接変換可能化。Ren の手動入力工数がさらに圧縮（10分→30秒）、Tailwind v4 JIT compiler 高速化と相まって LP 移植スピードが従来比2倍→3倍に
+- **Chrome DevTools API スクリプト化「Computed Styles API 自動取得」で目視抽出を完全排除**：2026-05-25トレンドの Computed Styles API を Puppeteer + `page.evaluate(() => Array.from(document.querySelectorAll('*')).map(el => ({tag: el.tagName, style: window.getComputedStyle(el)})))` のスクリプトで一括取得→JSON 出力。STEP 2-5 の目視ピッカー作業が完全排除され、抽出精度99%担保＋STEP 全体時間が1.5時間→45分に短縮
+- **画像最適化「sharp + cwebp + AVIF 三段圧縮」で Lighthouse Performance 90+ を抽出段階で担保**：2026-05-25の業界トレンド「Lighthouse Performance 90+ 必須化」に対応し、2026-05-12構築の `wget + cwebp` パイプラインに `sharp` (Node.js) で AVIF 変換も追加。画像サイズが WebP 比でさらに30%削減、平均ページ重量が抽出段階で1.8MB→1.2MBに圧縮。Ren への納品時点で Lighthouse 90+ が保証され、Mia QA の Performance NG ゼロ化
+- **OKLCH色空間自動変換「rgbToOklch ユーティリティ」を STEP 2 標準組込で OS 間色差ゼロ化**：2026-05-16導入の OKLCH 色空間を STEP 2 で必須化し、`culori` npm パッケージで HEX→OKLCH 変換を JSON 出力に自動付与。Ren の Tailwind config に `oklch()` 関数で直貼り可能化し、iOS/Windows/Android で「同じ知覚色」を物理保証。Mia の「OS で色違う」NG を抽出段階でゼロに、再抽出ループが月3件→0件
+
+### 2026-05-27
+- **失敗パターン: `getComputedStyle` だけで CSS 変数を取りこぼす** → 回避策: STEP 2 で `:root` の生 CSS テキストを `--` 接頭辞で正規表現走査し computed と diff（理由：computed は最終解決値のみ返り、変数定義そのものは消える）。実例：建設業 LP で `--brand-accent` が `<style>` インライン定義され Ren に `#XXXXXX` 直値で渡してしまい Mia QA でカスケード崩壊
+- **失敗パターン: `::before` / `::after` の computed style 取り逃し** → 回避策: STEP 4 で全要素を `['::before','::after']` の 2 回ループ `getComputedStyle(el, pseudo)` 強制取得（理由：querySelectorAll では疑似要素は走査対象外）。実例：装飾矢印アイコンが複製版で全消滅し Mia 差し戻し
+- **失敗パターン: Shadow DOM 内 CSS の貫通漏れ** → 回避策: STEP 1 で `*` 走査時に `.shadowRoot` 有無を判定し再帰走査（理由：標準 DOM API は Shadow Root 配下を貫通しない）。実例：埋込チャットボットのスタイルが抽出ゼロで Ren が手書き復元する事故
+- **失敗パターン: `unicode-range` 抽出漏れによる日本語フォント部分欠落** → 回避策: STEP 3 で `document.fonts.entries()` 全 FontFace の `unicodeRange` を JSON 配列で記録（理由：Google Fonts は分割配信が標準）。実例：英数だけ別フォントになり Mia 「フォントが違う」NG

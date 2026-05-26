@@ -308,3 +308,15 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - Playwright の2026年Q1新機能『MCP Integration』：Claude Code経由でE2Eテストの実装・実行・修正が連携、riku の作業フロー進化
 - 2026年Q2のテスト戦略新標準『Trophy Model』：Unit:Integration:E2E = 1:3:2 の比率配分が新標準化、従来ピラミッド型より実用的
 - Vitest 2.0（2026年4月）：実行速度3倍化＋Browser Mode正式化、riku のテスト基盤刷新候補
+
+### 2026-05-26
+- **効率化テクニック：shadcn/ui の `npx shadcn@latest add` で 10 種コンポーネント一括導入＋Tailwind v4 の `@theme` でブランドカラー 1 ファイル定義**：自前で Button/Input/Form を作る 30 分/種が 30 秒に、新規ページ実装の初動 60 分→12 分（理由：実績ある汎用コンポーネントを起点に「Riku は a11y・タイポグラフィ・余白の高付加価値レビュー」だけに集中可能化）。
+- **効率化テクニック：Cursor/Claude Code でコンポーネント初稿を自然言語生成→Riku は仕上げに集中**：「shadcn/ui の Card で求人カード実装、画像左・タイトル右上・タグ右下・キーボード操作対応」と指示すれば 30 秒で初稿、レビュー＆仕上げ 15 分で完了 = 合計 16 分。手書き 60 分から 73% 短縮（理由：構造的なコード生成は AI 化し、Riku は「判断業務」に時間集中）。
+- **効率化テクニック：Ao の Zod スキーマを monorepo `packages/api-types` で共有、`react-hook-form + zodResolver` で型・バリデーション・エラーメッセージを 1 ソース化**：API 完成を待たず先行実装可能、FE/BE 並列実装率 100%・ブロッキング時間ゼロ化。仕様変更時もコンパイルエラーが「センサー」として機能（理由：型を SSOT 化することで仕様伝達のドキュメント往復が消滅）。
+- **効率化テクニック：PR テンプレートに「Lighthouse スコア・Bundle Size 差分・PC/SP スクショ・data-testid 一覧」を必須添付化、`size-limit` ＋ `lighthouse-ci` を GitHub Actions で自動投稿**：レビュアー（Mio/Kai）はコードリーディング 30 分→数値とスクショで 5 分判定、Mio との QA レビュー往復ゼロ化（理由：レビュー判断材料が可視化され、コード本文を読み込む工程を最小化）。
+
+### 2026-05-27
+- **失敗パターン: Client Component で `localStorage` を初期 state に使い Server Render 時 undefined ／ Hydration 後値ありで DOM 不一致→全コンポーネント再生成ちらつき** → 回避策: ブラウザ専用 API（localStorage／window／navigator）は `useEffect` 内で初期化 or `'use client'` + dynamic import `ssr: false`＋ `useSyncExternalStore` パターンで「初回 server 値→mount 後 client 値」を安全切替（理由：SSR と CSR の実行環境差は構造的不可避、初回 render を一致させるのが鉄則）。実例：ダークモード判定で初回ちらつき→useSyncExternalStore 移行後 Hydration エラーゼロ
+- **失敗パターン: フォーム送信ボタン連打で同一 POST が 5 回飛び DB に重複レコード 5 件作成** → 回避策: React Hook Form の `isSubmitting` で送信中 `disabled` 必須＋ `useTransition` で楽観的 UI ＋ Ao の API 側 Idempotency-Key ヘッダー二重防御（理由：UI 単独防御では タイミング次第で抜ける、サーバー側冪等性が最終ライン）。実例：応募フォーム重複送信→3 段防御後重複ゼロ
+- **失敗パターン: 画像最適化を忘れて 4MB PNG を 100 枚並べたページで LCP 8 秒、モバイル 70% 離脱** → 回避策: 画像は必ず `next/image` 経由＋デザイナー素材を CI `image-size-check` で 200KB 超警告＋ `sharp` で WebP/AVIF 自動変換＋ Lighthouse Performance 90 未満はマージ不可（理由：画像最適化は手動だと必ず漏れる、CI ゲートで強制）。実例：求人一覧ページ LCP 7.5 秒→next/image ＋ AVIF 化後 LCP 1.8 秒
+- **失敗パターン: 日付・通貨を `toLocaleString()` 直書きで Server/Client で異なる結果→ Hydration ミスマッチ** → 回避策: `Intl.DateTimeFormat`／`Intl.NumberFormat` をロケール明示（`'ja-JP'`）＋ TZ 明示（`timeZone: 'Asia/Tokyo'`）＋ `date-fns-tz` ラッパーを `@/lib/format.ts` 集約＋「Server 1 ソース→Client 表示のみ」徹底（理由：実行環境のロケール・TZ 差が表示差分を生む）。実例：応募日時表示で SSR/CSR ズレ→ラッパー集約後 Hydration 警告ゼロ

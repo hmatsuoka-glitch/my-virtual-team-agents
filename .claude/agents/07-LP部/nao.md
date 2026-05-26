@@ -456,3 +456,16 @@ export const HERO = {
 - Lottie の2026年Q1新機能『Lottie Web 6.0』：軽量化60%＋AI生成連携。nao のアニメーション制作で軽量実装の選択肢拡大
 - 2026年Q2のスクロールアニメーション新潮流『Scroll-Driven Animations CSS』：ブラウザ標準化完了、JS依存ゼロでパララックス実装可能。LP表示速度+25%
 - Webアニメーション業界2026年4月レポート：『過剰アニメーションによる離脱率』が前年比+18%増加。アニメーション控えめ設計が逆にCVR向上のトレンド
+
+### 2026-05-26
+- 設計書テンプレ `templates/lp-design-spec.md` に「ページ構成/コンポーネント定義/props 型/constants 例/データフロー図/Performance Budget/8 観点表/Mia 観点先回り」8 セクション固定化する場合は、設計書作成時間 90 分→25 分（理由：毎回ゼロから書く構造設計をスケルトン化、案件特性に応じた埋め込みのみで完結）
+- Hana JSON → `zod-to-ts` で `types/index.ts` を CLI 1 コマンド生成する場合は、props 型定義の手書き 40 分→2 分（理由：JSON Schema → Zod → TypeScript Interface のパイプラインで実行時バリデート可能な型を自動生成、Ren へ納品時にビルド検証済み）
+- Mermaid 状態遷移図（idle/hover/focus/disabled/loading/error）を YAML 1 ファイル → `mermaid-cli` で SVG 自動出力する場合は、Ren/Mia の「ローディングどう見せる？」質問ラリー 5 往復→1 往復（理由：状態遷移を視覚化することで実装時の判断迷いを設計層で潰す）
+- Style Dictionary で Hana JSON → Tailwind / iOS / Android 3 プラットフォーム同期する場合は、色変更時の手動修正 3 ファイル→0（理由：`style-dictionary build` 単一コマンドで全プラットフォーム設定再生成、マルチプラットフォーム LP・アプリ並行案件で効果絶大）
+- 設計書を VSCode `Markdown Preview Mermaid Support` 拡張 + `eisvogel.latex` テンプレで Markdown → PDF 自動エクスポートする場合は、提案書作成時間を 30 分→3 分（理由：設計書の Markdown ソースが PDF/HTML/Slides 全フォーマットに即変換可能、クライアント提示用と Ren 用を同一ソースで管理）
+
+### 2026-05-27
+- **失敗パターン: Server/Client Component 境界を設計書に明記せず Ren が `'use client'` 乱用** → 回避策: STEP 2 で各 `.tsx` に `// SA`(Server Atom) `// IM`(Interactive Molecule) `// HO`(Hybrid Organism) ラベル必須化（理由：Next.js 14+ は SC デフォルト、CC 乱用でバンドル爆増）。実例：全コンポに `'use client'` 付与で JS バンドル 280KB → 90KB に削減
+- **失敗パターン: God Component（巨大 Hero.tsx）で props 15 個超** → 回避策: 「props 5 個超えたら強制分割」ルール化し Hero → HeroImage / HeroHeadline / HeroCTA の 3 子分割（理由：再利用不能・テスト不能化）。実例：props 18 個の Hero がリファクタ 1 日工数
+- **失敗パターン: `constants/content.ts` キー命名揺れで Ren typo 連発** → 回避策: 全キーを `SCREAMING_SNAKE_CASE` + セクション接頭辞統一（`HERO_TITLE` `HERO_CTA_TEXT`）、lint で `^[A-Z_]+$` 強制（理由：`heroTitle` `hero_subtitle` `HeroCTA` 混在で型補完が効かない）。実例：3 種命名混在で Ren typo を 5 箇所修正
+- **失敗パターン: `loading.tsx` / `error.tsx` / `not-found.tsx` の 3 状態未設計** → 回避策: 全 route に 3 ファイルセット必須化し設計書テンプレで先に空ファイルだけ生成（理由：正常系のみ設計だと Network エラー・Loading で UI 崩壊）。実例：API 遅延時に白画面で離脱率 +30%

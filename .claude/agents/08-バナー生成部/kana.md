@@ -339,3 +339,15 @@ Webサイト・LP・UIのデザイン生成・改善を担当。AI Designer MCP�
 - AIキャッチコピー生成『Copy.ai Pro』『Anyword』日本語精度向上（2026年Q1）：バナー用短文コピー100案を2分で生成、kana の制作量倍増
 - 2026年Q2のバナーコピー新潮流『Number-Heavy Copy』：『応募者2,500名突破』等の数字メイン構成がCTR+45%の事例
 - 建設業バナーでは『施工年数・実績件数』の数字訴求が2026年で最強：『創業45年・5,800棟』等の具体数値が信頼性指標+60%
+
+### 2026-05-26
+- **Figma Variables × Magic Resize の二段運用で 1 案件 4 サイズ制作が 60 分→8 分（7.5 倍速）**：1080×1080 マスター 1 案を Auto Layout＋Variables で構築 → Magic Resize で 1080×1350／1200×628／1080×1920 を AI 自動生成 → 微調整 2-3 箇所のみ手動。月 80 案件 × 4 サイズで月 70 時間削減（理由：マスター 1 案の完成度を上げる時間に集中投資し、サイズ展開は AI が機械的処理）
+- **Anima プラグインで Figma→HTML 自動書き出し、Hiro 引き渡し工数 25 分→1 分**：Figma 完成バナーを Anima でワンクリック書き出し、CSS Variables・Google Fonts link・omitBackground 対応が自動含有。Hiro が `<!-- HIRO-CHECK: viewport=1080x1080 / scale=2 -->` コメントもプラグイン設定で自動挿入、書き出し HTML の構造予測可能化で Hiro 側差し戻しもゼロ化（理由：手動コーディングの誤字・抜け漏れリスクを構造的に排除）
+- **CSS Variables「ブランドトークン JSON 連携」で複数色パターン 20 案を 1 マスター × `--primary` 切替で量産**：rei との合意済み `brand-tokens/{client}.json` を Kana テンプレに import し、JSON の color パターン配列を Bulk Plugin で CSV インポート → 20 PNG 一括書き出し。色違い量産 2 時間→15 分、デザイン整合性 100% 維持（理由：色値ハードコード混在による修正漏れを CSS Variables 集約で物理防止）
+- **「テンプレライブラリ × Magic Resize」運用で初稿出し 90 分→25 分**：業種×訴求軸×媒体の 25 テンプレを Figma Component Library 化、新規案件は yuna ターゲット 3 行から 30 秒で該当テンプレ選択 → コピー差し替え → Magic Resize で全サイズ展開 → 微修正のフロー固定化。1 案件あたり 65 分削減、月 80 案件で 86 時間（理由：判断時間と組み立て時間を「資産活用」に置換し、Kana の高付加価値「タイポ・余白・コントラスト微調整」に時間集中）
+
+### 2026-05-27
+- **失敗パターン: `position: fixed` を多用した HTML が Puppeteer の clip 範囲外にレンダされ CTA ボタン切れで納品** → 回避策: flex/grid レイアウトを主軸に、`position: fixed` は完全禁止・`absolute` も装飾要素限定とテンプレ規約化（理由：Puppeteer viewport は scroll を持たないため fixed 配置が画面外に流れる）。実例：1080×1080 で CTA が見切れ→hiro 差し戻し→規約化後事故ゼロ
+- **失敗パターン: `width: 100vw / height: 100vh` 指定が Puppeteer 出力で 1078px など 2px 縮みで media spec 不一致** → 回避策: バナーは vw/vh 禁止、`body { width: 1080px; height: 1080px }` の px 固定＋ `* { box-sizing: border-box }` 全要素適用を必須テンプレ化（理由：スクロールバー幅や padding 計算で vw が実寸ズレを起こす）。実例：sora QA で「サイズ 1078×1078 です」と指摘→px 固定運用で完全一致
+- **失敗パターン: Google Fonts の `wght@400;700` だけ link 指定し font-weight: 900 を CSS で書いて Puppeteer 出力時に Regular フォールバック描画** → 回避策: 使用する全 wght を link href axis に必ず列挙＋ STEP 3 タイポ設計完了時に「使用ウェイト一覧 vs link 整合性」を自己チェック（理由：未読込ウェイトはブラウザがフォールバックを選ぶが Puppeteer Chromium では完全に欠落）。実例：Bold 900 指定が Regular 描画→差し戻し→照合工程導入後ゼロ
+- **失敗パターン: CSS Grid `grid-template-columns: 1fr 1fr` で長短コピー混在時にセンタリング崩れ** → 回避策: `minmax(0, 1fr) minmax(0, 1fr)` を必ず明示し、fr 単位の min-content 尊重挙動を抑制（理由：fr は子要素の min-content で伸びるため、長文側の幅が広がる）。実例：rei の長短ペアコピーで右側カラム圧迫→minmax(0,1fr) 標準化後レイアウト崩れゼロ

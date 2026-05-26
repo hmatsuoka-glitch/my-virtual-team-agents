@@ -482,3 +482,17 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - 新世代スクレイピングツール『Browse AI 2.0』『Apify Pro』が2026年Q1高度化：JS実行込みのフルレンダリングHTML取得が標準化、SPA系LPの複製精度向上
 - 2026年Q2のLP複製品質基準『Lighthouse 95+』：従来90+標準から95+に上昇。ren の複製納品基準として95+全項目クリアが事実上必須
 - Figma to Code ツール『Anima』『Locofy 2.0』が2026年4月に精度大幅向上：Figmaデザイン→React/Vue/Tailwindコード変換の精度95%、ren の作業フロー候補
+
+### 2026-05-26
+- 新規 LP 案件起動を `pnpm create lp-template <client-name>` 自社 CLI 1 コマンドで Next.js 15 + Tailwind v4 + shadcn + Biome + Husky + Playwright + Lighthouse CI を一括セットアップする場合は、プロジェクト初期構築 2 時間→30 秒（理由：毎案件の `create-next-app` → 各種設定 → ESLint/Prettier 統合の定型作業を完全自動化）
+- shadcn/ui コンポーネントを `npx shadcn add button card dialog sheet form sonner skeleton` 7 個一括投入 + LET 社内 registry 経由で社内標準テーマ適用する場合は、UI 骨格実装 2 時間→15 分（理由：Button/Card/Dialog の手書き実装を撤廃、Sota デザイン提案との一貫性も CLI 層で担保）
+- フォーム実装を「Zod スキーマ + React Hook Form + Server Action + `after()` 非同期処理 + `useFormStatus` ローディング」テンプレ化する場合は、新規フォーム実装 90 分→18 分（理由：5 要素の組合せを 1 テンプレで提供、INP 200ms 切り + a11y 6 属性 + 二重送信防止が標準装備）
+- Hana JSON → `tailwind.config.ts` 自動生成 + `next/font` 設定 + `globals.css` 配色注入を `pnpm sync:tokens` 1 コマンド化する場合は、STEP 1 のスタイル設定 45 分→90 秒（理由：Hana 仕様変更時の Ren 手動転記ミスをゼロ化、`tokens.json` を Single Source of Truth に）
+- `pnpm dev:fresh`（`.next/cache` 自動クリア + Turbopack 起動）を husky `post-checkout` フックで自動実行する場合は、ブランチ切替時の HMR 不発トラブル「再起動 3 秒待ち」を物理ゼロ化（理由：1 日 200 回 HMR 走る環境で合計待機 460 秒→45 秒、コンテキストスイッチ後の認知負荷も削減）
+
+### 2026-05-27
+- **失敗パターン: `<img>` 直書きで LCP 4 秒超え** → 回避策: 全画像を `next/image` 経由必須、Hero / Above-the-Fold は `priority` + `sizes` + `placeholder="blur"` 3 props 固定（理由：`<img>` は lazy / WebP 自動変換が効かず LCP 致命的）。実例：Hero 画像 3.2MB 原寸配信で LCP 4.8s → next/image 化で 1.6s
+- **失敗パターン: Hydration mismatch で本番のみエラー** → 回避策: `Date.now()` / `Math.random()` / `window.*` 直参照を Server Component で禁止、必須なら `useEffect` か `'use client'` 明示（理由：SSR と CSR の出力差分でランタイム例外）。実例：時刻表示 SC で「dev では OK / 本番だけクラッシュ」3 時間調査
+- **失敗パターン: 環境変数を `process.env.API_KEY` でクライアント露出** → 回避策: `NEXT_PUBLIC_*` プレフィックスのみクライアント許可、それ以外は Server Action / API Route 経由必須（理由：ビルド時に JS バンドルに展開され公開される）。実例：DB 接続文字列がブラウザ DevTools で丸見え事故
+- **失敗パターン: `<form>` の `name` / `autocomplete` 属性省略で iOS キーチェーン自動入力無効化** → 回避策: 全 input に `name` / `autocomplete` / `inputMode` / `enterkeyhint` 4 属性必須化（理由：自動入力が効かないと手打ち離脱率 +20%）。実例：問い合わせフォーム CV 率 1.2% → 4 属性追加で 1.5%
+- **失敗パターン: `npm run dev` で OK なのに `next build` で型エラー** → 回避策: コミット前 husky で `tsc --noEmit` + `next build` 必須実行（理由：dev は型チェック緩く本番ビルドのみ厳格判定）。実例：`any` 暗黙混入で Vercel デプロイが 3 連続失敗

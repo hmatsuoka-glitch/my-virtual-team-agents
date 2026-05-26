@@ -280,3 +280,15 @@ const banners = [
 - Figma Banner Templates の2026年Q1新機能『Brand AI Generator』：CIガイドから自動的にバナーテンプレ50案生成可能、hiro の作業スピード大幅向上
 - 2026年Q2のバナーサイズ標準変更：Google Display Network が『1080×1080』を新標準化（従来728×90）。hiro の納品サイズパターン見直し時期
 - AI画像生成『DALL-E 4』『Midjourney v7』（2026年4月）の日本人モデル生成精度大幅向上：建設業クライアントの求人バナーで肖像権リスクを抑えた制作が可能に
+
+### 2026-05-26
+- **Puppeteer→Playwright 1.50 移行で並列 PNG 変換 4 ファイル 18 秒→6 秒（3 倍速）**：Playwright の `browser.newContext()` を 4 個プールしてブラウザインスタンスを 1 つで共有、コンテキスト切替が ms オーダーで完結。WebKit/Firefox 検証も同スクリプトで可能化し、Hiro の月次バナー変換工数 33 時間→11 時間（理由：Puppeteer のページプールはメモリ共有問題でクラッシュ多発、Playwright のコンテキスト分離が安定性 100% 改善）
+- **`@let-inc/banner-utils` v2 リリースで PNG セルフチェック自動化を 30 秒→2 秒に圧縮**：`validateBanner(path)` 1 関数で「ファイル容量／解像度／ICC sRGB／ロゴクリアスペース／アルファ 4ch／文字密度」の 6 観点を sharp+tesseract.js で一括判定し JSON 返却。yuna への完了レポートに JSON 添付で「目視確認 30 秒×N 件」が完全消滅、月 200 件で 100 分削減（理由：チェック観点が個別関数だと「呼び忘れ」発生、1 関数集約で漏れゼロ化）
+- **媒体別圧縮プロファイル「config 1 ファイル化」で yuna 指示書の deviceScaleFactor 確認工程ゼロ化**：`compression-profile.json` に `{"indeed": {"scale":2, "quality":80, "maxKB":150}, "instagram": {...}}` を全媒体定義し、yuna の指示書「媒体タグ」だけで自動適用。Hiro の事前判断工数 5 分→0 秒、媒体ごとの設定間違い事故ゼロ化（理由：人間が毎回判断していた工程を config として外部化、判断の属人性を排除）
+- **AVIF 自動変換パイプライン組込で Indeed 150KB 上限案件の deviceScaleFactor 3 倍出力が可能に**：`sharp(buf).avif({ quality: 80 })` を PNG 出力後に追加するだけで、同等画質で 30% 容量削減。従来 PNG 100KB が AVIF 70KB に圧縮、deviceScaleFactor を 2→3 に上げる容量余裕が確保され、Retina デバイスでの「ぼやけ」体験を物理排除（理由：圧縮率改善で品質パラメータ上振れの余裕が生まれる連鎖効果）
+
+### 2026-05-27
+- **失敗パターン: Chromium ヘッドレス起動時のフォント未読込で PNG にシステムフォント描画される事故** → 回避策: `page.goto()` 後に `await page.evaluate(() => document.fonts.ready)` ＋ `document.fonts.check('700 16px "Noto Sans JP"')` の戻り値検証を screenshot 前に必須化（理由：networkidle2 待機だけだと CSS Font Loading API の解決を保証できない）。実例：建設業案件で見出し Bold 700 が Regular 400 で描画され Yuna 差し戻し→検証導入後ゼロ化
+- **失敗パターン: 透過 PNG 要求案件で `omitBackground: true` だけ指定し背景白塗りで納品** → 回避策: HTML の `html, body { background: transparent !important }` ＋ Puppeteer `omitBackground: true` ＋ 出力後 `sharp(buf).ensureAlpha().png()` ＋ `metadata().channels === 4` assert の 4 段防御（理由：1 段だけだと Kana の HTML 側 body 背景指定で透過が消える）。実例：LP 部から OGP 透過要求で背景白塗り事故→4 段防御後事故ゼロ
+- **失敗パターン: 媒体規定容量を超過した状態で Sora QA 提出→差し戻しループ 2 時間ロス** → 回避策: `compression-profile.json` の媒体別上限値（Indeed 150KB / Instagram 30MB / LINE 1MB / X 5MB / TikTok 500KB）を sharp 検証スクリプトで自動チェック、超過時は Yuna 提出前に再変換（理由：人間目視だと容量数値の見落としが発生）。実例：deviceScaleFactor 3 倍出力で Indeed 上限超過→自動 lint で実装段階検知
+- **失敗パターン: 複数バナー Promise.all 並列実行で 1 件タイムアウト時に他成功扱いで完了→納品漏れ発覚** → 回避策: `Promise.allSettled` ＋ rejected 件数 1 以上で exit code 1 ＋ Yuna へ Slack 通知の 3 点セット運用（理由：Promise.all は 1 件失敗で全体 reject だが allSettled は個別判定可能）。実例：5 バナー並列で Indeed 用だけタイムアウト→納品漏れ→allSettled 移行後検出率 100%

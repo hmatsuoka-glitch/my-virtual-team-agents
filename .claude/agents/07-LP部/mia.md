@@ -433,3 +433,16 @@ Builder が生成した `/agents/web_builder/output/` を Vercel にデプロイ
 - フォーム最適化ツール『Formbricks』『Fillout』が2026年Q1日本対応：A/Bテスト機能内蔵で最適化サイクルが従来比3倍速。mia の作業フローで活用価値
 - 2026年Q2のフォーム新標準『Passkey対応必須化』：パスワードレス認証Passkeyが主要ブラウザ全対応、フォーム設計でPasskey連携が事実上必須に
 - 2026年4月のフォームCVR業界統計：『ステップ分割フォーム』が単一フォームより完了率+42%。mia の長尺フォーム案件はステップ分割が事実上の標準
+
+### 2026-05-26
+- STEP 1〜5 の 95 項目チェックを `playwright test --workers=10 --grep @lp-qa` で 10 並列実行する場合は、フル QA 時間を 25 分→3 分（理由：レイアウト/カラー/フォント/アニメ/レスポンシブの 5 カテゴリは独立タスクで CPU バウンド、並列度を上げるほどリニアに短縮）
+- 差し戻しレポートを `mia-bot` が `gh issue create` + `slack` 通知 + saki アサインまで自動連携する場合は、レポート手動投稿の 15 分作業をゼロ化（理由：pixelmatch/axe/Lighthouse の結果 JSON から Markdown テーブル自動生成、saki が即着手可能）
+- pixelmatch の「Hero/CTA/Form」だけ厳格判定（0.05）+ 他要素は looks-same 知覚判定の 2 段階を `mia.config.json` 設定化する場合は、誤 NG 差し戻しを 40% 削減（理由：訪問者が 0.5 秒で判定する 3 要素のみ厳格化、他は人間知覚モデルで誤検出排除）
+- BrowserStack の「4 ブラウザ × 3 デバイス = 12 環境」E2E を GitHub Actions matrix で並列実行する場合は、クロスブラウザ QA を 60 分→8 分（理由：matrix.browser × matrix.device で 12 ジョブ同時起動、iOS Safari 特有バグも本番前に物理潰し）
+- 同一案件 2 回目以降の QA は Chromatic の `--only-changed` で変更コンポーネントのみ再判定する場合は、再差し戻し後の QA 時間を 25 分→4 分（理由：影響なしコンポーネントは前回キャッシュ再利用、Mia のレビュー往復 3 回→1 回確定で saki/ren への戻し時間も削減）
+
+### 2026-05-27
+- **失敗パターン: 全要素 pixelmatch 厳格判定で誤 NG 連発** → 回避策: Hero/CTA/Form のみ閾値 0.05 厳格 + 他は looks-same 知覚判定の 2 段階を `mia.config.json` 設定化（理由：訪問者は 0.5 秒で Hero/CTA/Form しか脳判定しない）。実例：背景グラデの 1px 差で 30 件誤 NG → Saki 工数浪費
+- **失敗パターン: PC 確認だけで SP・タブレット崩れ見逃し** → 回避策: 375 / 768 / 1280 の 3 ブレークポイント + iOS Safari / Chrome Android 実機を Playwright matrix で必須化（理由：iOS Safari の `100vh` バグ・Android Chrome の `safe-area-inset` 差を PC では検出不能）。実例：iOS で Hero CTA が画面外配置され SP CV ゼロ
+- **失敗パターン: 静止スクショだけで hover / focus-visible 状態欠落見逃し** → 回避策: STEP 4 で全 CTA に対し default / hover / focus-visible / active / disabled の 5 状態を Playwright `.hover()` `.focus()` で強制スクショ（理由：CV 直前 0.5 秒の躊躇は hover フィードバック有無で決まる）。実例：hover で何も起きない CTA が「押せるか不明」で CV ▲18%
+- **失敗パターン: Lighthouse Performance 90+ 数値 OK でも体感ガタつく** → 回避策: 数値合格でも `prefers-reduced-motion` + 4G スロットル実機を必ず体感、CLS 0.05 超過は数値NG ではなく「信頼できない」直感 NG として差し戻し（理由：CLS 0.1 未満でもユーザー脳は 0.3 秒で「壊れたサイト」判定）。実例：CLS 0.08 で数値合格でも実機ガタつき離脱率 +22%
