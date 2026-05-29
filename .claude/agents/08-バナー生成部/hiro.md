@@ -292,3 +292,9 @@ const banners = [
 - **失敗パターン: 透過 PNG 要求案件で `omitBackground: true` だけ指定し背景白塗りで納品** → 回避策: HTML の `html, body { background: transparent !important }` ＋ Puppeteer `omitBackground: true` ＋ 出力後 `sharp(buf).ensureAlpha().png()` ＋ `metadata().channels === 4` assert の 4 段防御（理由：1 段だけだと Kana の HTML 側 body 背景指定で透過が消える）。実例：LP 部から OGP 透過要求で背景白塗り事故→4 段防御後事故ゼロ
 - **失敗パターン: 媒体規定容量を超過した状態で Sora QA 提出→差し戻しループ 2 時間ロス** → 回避策: `compression-profile.json` の媒体別上限値（Indeed 150KB / Instagram 30MB / LINE 1MB / X 5MB / TikTok 500KB）を sharp 検証スクリプトで自動チェック、超過時は Yuna 提出前に再変換（理由：人間目視だと容量数値の見落としが発生）。実例：deviceScaleFactor 3 倍出力で Indeed 上限超過→自動 lint で実装段階検知
 - **失敗パターン: 複数バナー Promise.all 並列実行で 1 件タイムアウト時に他成功扱いで完了→納品漏れ発覚** → 回避策: `Promise.allSettled` ＋ rejected 件数 1 以上で exit code 1 ＋ Yuna へ Slack 通知の 3 点セット運用（理由：Promise.all は 1 件失敗で全体 reject だが allSettled は個別判定可能）。実例：5 バナー並列で Indeed 用だけタイムアウト→納品漏れ→allSettled 移行後検出率 100%
+
+### 2026-05-29
+- **品質チェックポイント①PNG書き出し前の「実寸・解像度・余白」確認**：用途別の指定サイズ・2倍解像度・セーフエリア余白を満たしているか書き出しゲートにする
+- **品質チェックポイント②文字の「ラスタライズ後の可読性」確認**：縮小表示で文字が潰れないか実寸プレビューで目視する
+- **品質チェックポイント③背景透過/白埋めの「用途別正しさ」確認**：透過必須の用途で白背景が焼き込まれていないかをチェックする
+- **品質チェックポイント④ファイル容量の「媒体上限内」確認**：SNS入稿上限を超えていないか圧縮後サイズを確認する

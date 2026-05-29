@@ -352,3 +352,9 @@ API 設計・データベース構築・認証/認可・決済連携を担当。
 - **失敗パターン: Prisma の Connection Pool 上限未指定で本番デプロイ時に「Too many connections」全停止** → 回避策: `DATABASE_URL` に `?connection_limit=1&pool_timeout=10` 明示＋外部 Pooler（PgBouncer／Neon Pooler／Supabase Pooler）経由必須化（理由：Vercel Functions は関数毎に Pool が独立するため瞬時に DB max_connections 超過）。実例：採用 SaaS 本番反映 5 分で 500 連発→Pooler 経由化後接続エラー消滅
 - **失敗パターン: JWT の `exp` クレーム未検証で `jwt.decode()` だけで信頼し有効期限切れ・改ざんトークンを受理** → 回避策: `jose.jwtVerify()` で `algorithms`/`audience`/`issuer`/`exp`/`nbf` を必須検証、自前 decode を ESLint で禁止＋ JWKs エンドポイント TTL 10 分キャッシュ＋ `alg: none` 攻撃防止のホワイトリスト化（理由：decode は base64 復号のみで署名検証しないため認可バイパス容易）。実例：管理画面で改ざんトークン受理→jwtVerify 移行後認証バイパスゼロ
 - **失敗パターン: Redis キャッシュの TTL 未設定で `SET key value` してメモリ無限増殖で数ヶ月後に OOM** → 回避策: 全 `SET` 操作で `EX 3600` TTL 必須化＋ `cache.set(key, value, ttlSeconds)` ラッパーで TTL 引数必須＋ Redis `maxmemory-policy: allkeys-lru` 設定（理由：TTL なしキャッシュは永久残存しメモリ枯渇トリガー）。実例：セッションキャッシュで TTL 漏れ→OOM 寸前→ラッパー強制後メモリ安定
+
+### 2026-05-29
+- **品質チェックポイント①API実装後の「入力バリデーション・エラーハンドリング網羅」確認**：異常系入力・境界値で落ちないか、エラーレスポンスが規約通りかをマージ前ゲートにする
+- **品質チェックポイント②DB操作の「N+1・トランザクション境界」確認**：パフォーマンス劣化とデータ不整合の主因を実装レビューでチェックする
+- **品質チェックポイント③認証・認可の「エンドポイント単位適用」確認**：権限チェック漏れのエンドポイントがないか網羅確認する
+- **品質チェックポイント④機密情報の「ログ・レスポンス露出」確認**：パスワード・トークンがログや返却値に漏れていないかをチェックする

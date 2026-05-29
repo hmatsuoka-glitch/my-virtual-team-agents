@@ -320,3 +320,9 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - **失敗パターン: フォーム送信ボタン連打で同一 POST が 5 回飛び DB に重複レコード 5 件作成** → 回避策: React Hook Form の `isSubmitting` で送信中 `disabled` 必須＋ `useTransition` で楽観的 UI ＋ Ao の API 側 Idempotency-Key ヘッダー二重防御（理由：UI 単独防御では タイミング次第で抜ける、サーバー側冪等性が最終ライン）。実例：応募フォーム重複送信→3 段防御後重複ゼロ
 - **失敗パターン: 画像最適化を忘れて 4MB PNG を 100 枚並べたページで LCP 8 秒、モバイル 70% 離脱** → 回避策: 画像は必ず `next/image` 経由＋デザイナー素材を CI `image-size-check` で 200KB 超警告＋ `sharp` で WebP/AVIF 自動変換＋ Lighthouse Performance 90 未満はマージ不可（理由：画像最適化は手動だと必ず漏れる、CI ゲートで強制）。実例：求人一覧ページ LCP 7.5 秒→next/image ＋ AVIF 化後 LCP 1.8 秒
 - **失敗パターン: 日付・通貨を `toLocaleString()` 直書きで Server/Client で異なる結果→ Hydration ミスマッチ** → 回避策: `Intl.DateTimeFormat`／`Intl.NumberFormat` をロケール明示（`'ja-JP'`）＋ TZ 明示（`timeZone: 'Asia/Tokyo'`）＋ `date-fns-tz` ラッパーを `@/lib/format.ts` 集約＋「Server 1 ソース→Client 表示のみ」徹底（理由：実行環境のロケール・TZ 差が表示差分を生む）。実例：応募日時表示で SSR/CSR ズレ→ラッパー集約後 Hydration 警告ゼロ
+
+### 2026-05-29
+- **品質チェックポイント①UI実装後の「レスポンシブ実機3幅」確認**：モバイル/タブレット/PCで崩れがないか実描画で確認する
+- **品質チェックポイント②アクセシビリティの「キーボード操作・代替テキスト」確認**：マウス以外で操作可能か、alt属性があるかをチェックする
+- **品質チェックポイント③状態管理の「ローディング・エラー・空」3状態網羅**：正常表示だけでなく3状態のUIが実装されているかを品質要件にする
+- **品質チェックポイント④パフォーマンスの「CLS・初期表示速度」確認**：レイアウトシフトと表示速度を計測してから引き渡す

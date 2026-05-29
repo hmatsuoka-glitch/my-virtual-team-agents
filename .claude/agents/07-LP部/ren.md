@@ -496,3 +496,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **失敗パターン: 環境変数を `process.env.API_KEY` でクライアント露出** → 回避策: `NEXT_PUBLIC_*` プレフィックスのみクライアント許可、それ以外は Server Action / API Route 経由必須（理由：ビルド時に JS バンドルに展開され公開される）。実例：DB 接続文字列がブラウザ DevTools で丸見え事故
 - **失敗パターン: `<form>` の `name` / `autocomplete` 属性省略で iOS キーチェーン自動入力無効化** → 回避策: 全 input に `name` / `autocomplete` / `inputMode` / `enterkeyhint` 4 属性必須化（理由：自動入力が効かないと手打ち離脱率 +20%）。実例：問い合わせフォーム CV 率 1.2% → 4 属性追加で 1.5%
 - **失敗パターン: `npm run dev` で OK なのに `next build` で型エラー** → 回避策: コミット前 husky で `tsc --noEmit` + `next build` 必須実行（理由：dev は型チェック緩く本番ビルドのみ厳格判定）。実例：`any` 暗黙混入で Vercel デプロイが 3 連続失敗
+
+### 2026-05-29
+- **品質チェックポイント①コード生成後の「ビルド＆型エラーゼロ」確認**：npm run build とTypeScript型チェックを通してから引き渡す。ビルド未確認のコードは後工程を止める
+- **品質チェックポイント②設計書props定義との「実装一致」確認**：勝手なprops追加・省略がないか設計書と突合する
+- **品質チェックポイント③画像・フォントの「最適化と読み込み」確認**：next/image・font最適化が効いているか、CLS発生要因を潰す
+- **品質チェックポイント④レスポンシブ実装の「実機3幅」目視確認**：CSS記述だけでなく実描画で崩れがないかをチェックする
