@@ -452,3 +452,10 @@ Builder が生成した `/agents/web_builder/output/` を Vercel にデプロイ
 - **品質チェックポイント②差分指摘は「スクショ＋幅px＋期待動作」の3点セットで返す**：文章のみの指摘は再現コストで往復を増やすため、視覚NGは3点セット必須にする
 - **品質チェックポイント③レスポンシブは「3ブレークポイント実機」で検証**：1幅のみの判定を避け、モバイル/タブレット/PCで崩れを確認する
 - **品質チェックポイント④合格判定前に「致命/軽微」の優先度分類**：全NGを一括表記せず修正側が動ける優先度を添えて返す
+
+### 2026-06-03
+- **失敗: Preview URL だけで QA 通過させ、本番 CDN キャッシュの旧 CSS で「色違う」クレーム** → 回避策: STEP 6 通過判定は必ず本番ドメインで `?cache_bust=$(date +%s)` + DevTools Disable cache のハードリロードで実施。Network タブで `.css` の ETag/Last-Modified が最新であることまで確認してから合格を出す
+- **失敗: 全要素を pixelmatch 厳格判定して背景グラデの 1px 差で誤 NG を連発、Saki の工数浪費** → 回避策: Hero/CTA/Form のみ閾値 0.05 厳格、他要素は looks-same 知覚判定の 2 段階を `mia.config.json` で固定。訪問者が 0.5 秒で脳判定する 3 要素のみ厳しくし、誤差し戻しを物理削減
+- **失敗: 静止スクショだけで hover/focus-visible 状態の欠落を見逃す** → 回避策: STEP 4 で全 CTA に default/hover/focus-visible/active/disabled の 5 状態を Playwright `.hover()` `.focus()` で強制スクショ。CV 直前 0.5 秒の躊躇は hover フィードバック有無で決まるため未定義は即差し戻し
+- **失敗: PC Chrome だけで通過させ iOS Safari の `100vh`/`position:fixed` バグを本番で露呈** → 回避策: STEP 5 レスポンシブに BrowserStack 実機 iOS Safari + Android Chrome を必須デバイス追加し、`dvh/svh` 使用と `-webkit-` プレフィックスの有無を pixelmatch 前に静的チェック
+- **失敗: フォームのビジュアル QA は完璧でも送信後 404・自動返信未達を見逃す** → 回避策: STEP 4.5 でダミー応募→サンクス画面→自動返信受信→GA4 イベント発火までを Playwright E2E でゲート化。ビジュアル 95 項目合格でもフォーム E2E 未通過は納品不可

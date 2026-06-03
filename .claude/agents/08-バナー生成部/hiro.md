@@ -298,3 +298,9 @@ const banners = [
 - **品質チェックポイント②文字の「ラスタライズ後の可読性」確認**：縮小表示で文字が潰れないか実寸プレビューで目視する
 - **品質チェックポイント③背景透過/白埋めの「用途別正しさ」確認**：透過必須の用途で白背景が焼き込まれていないかをチェックする
 - **品質チェックポイント④ファイル容量の「媒体上限内」確認**：SNS入稿上限を超えていないか圧縮後サイズを確認する
+
+### 2026-06-03
+- **失敗パターン: WebP/AVIF 変換だけ納品して fallback PNG を付け忘れ、iOS Safari 14 未満・古い Android で広告画像が「壊れたアイコン」表示** → 回避策: 軽量形式（WebP/AVIF）は必ず PNG とセット出力し、`*.png` が存在しない案件は出力スクリプトで exit code 1（理由：媒体 CDN が自動振分けしないケースでは fallback 欠落が即非表示事故）。実例：Instagram 案件で AVIF 単独納品→旧端末ユーザーから「画像出ない」報告
+- **失敗パターン: sharp の `withMetadata()` で density だけ指定し ICC を渡し忘れ、Display P3 写真素材が Adobe RGB 誤解釈で納品先のみ色がくすむ** → 回避策: `withMetadata({ icc: 'srgb', density: 144 })` のように ICC を常に明示同梱し、出力後 `metadata().icc` が sRGB かを assert（理由：density と icc は別プロパティで、片方指定は片方欠落になる）。実例：建設業現場写真バナーで肌色がグレーがかる→sRGB 明示後解消
+- **失敗パターン: 媒体タグを config 参照せず deviceScaleFactor を手打ちし、Indeed 案件に scale 3 を適用して 150KB 超過で入稿 NG** → 回避策: `compression-profile.json` の媒体別 `{scale, quality, maxKB}` のみを参照し、手打ち値を ESLint/lint で禁止（理由：人間が毎回判断すると媒体ごとの上限を取り違える）。実例：Indeed バナーに scale 3 適用で 210KB→config 参照後上限内固定
+- **失敗パターン: Promise.all 並列変換で 1 件タイムアウトしても残りは成功扱いで完了し、Indeed 用だけ納品漏れ** → 回避策: `Promise.allSettled` ＋ rejected 1 件以上で exit code 1 ＋ Yuna へ Slack 通知の 3 点セット（理由：Promise.all は 1 件失敗で全体 reject だが allSettled は個別判定でサイレント成功を防げる）。実例：5 バナー並列で Indeed 用脱落→allSettled 移行後検出率 100%

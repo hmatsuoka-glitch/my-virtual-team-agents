@@ -502,3 +502,10 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **品質チェックポイント②設計書props定義との「実装一致」確認**：勝手なprops追加・省略がないか設計書と突合する
 - **品質チェックポイント③画像・フォントの「最適化と読み込み」確認**：next/image・font最適化が効いているか、CLS発生要因を潰す
 - **品質チェックポイント④レスポンシブ実装の「実機3幅」目視確認**：CSS記述だけでなく実描画で崩れがないかをチェックする
+
+### 2026-06-03
+- **失敗: `<img>` 直書きで Hero 画像を原寸配信し LCP 4 秒超え** → 回避策: 全画像を `next/image` 経由必須にし、Hero/Above-the-Fold は `priority`+`sizes`+`placeholder="blur"` の 3 props を固定。`<img>` 検出を ESLint で build fail 化
+- **失敗: Tailwind 動的クラス `text-${color}-500` が PurgeCSS で剥がれ本番だけ色消失** → 回避策: 全クラスをフル文字列で書き、条件分岐は `clsx` + 三項演算子に統一。`eslint-plugin-tailwindcss` の `no-arbitrary-value` も error 化して token 逸脱を防止
+- **失敗: `Date.now()`/`Math.random()`/`window.*` を Server Component で直参照し本番のみ Hydration エラー** → 回避策: これら 3 パターンを `eslint-plugin-no-hydration-mismatch` で error 化、必須なら `useEffect` 内か `'use client'` 明示。`'use client'` でも server/client 差分は壊れる事実を実装時に強制意識
+- **失敗: フォーム送信ボタン押下後の 200ms 沈黙でユーザーが二重押し→重複送信** → 回避策: 全送信ボタンに `useFormStatus` の `pending` 検知で「送信中…」スピナー表示と二重押しブロックを併用。重い非同期処理は `after()` でレスポンス外に逃がし INP 200ms を確保
+- **失敗: SP フォーム入力時にキーボード出現で送信ボタンが `100vh` 基準で画面外** → 回避策: 全フォームコンテナを `min-h-[100dvh]`（dynamic viewport height）に統一し、キーボード出現時もボタン位置が保持される実装を必須化

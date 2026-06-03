@@ -475,3 +475,10 @@ export const HERO = {
 - **品質チェックポイント②コンポーネント分割の「再利用性・props過多」チェック**：1コンポーネントのprops肥大は保守性を下げるため、責務分割の適切さを品質要件にする
 - **品質チェックポイント③ディレクトリ設計の「命名規約一貫性」確認**：命名揺れは実装者の迷走を招くため規約統一をチェックする
 - **品質チェックポイント④設計書に「レスポンシブ方針」明記確認**：ブレークポイントごとの挙動が設計段階で定義されているかを確認する
+
+### 2026-06-03
+- **失敗: Server/Client Component の境界を設計書に書かず Ren が `'use client'` 乱用しバンドル爆増** → 回避策: STEP 2 で全 `.tsx` に SA(Server Atom)/IM(Interactive Molecule)/HO(Hybrid Organism) ラベルを必須付与。`useState/useEffect/onClick` を持つ末端のみ IM とし、ページレベルは SA をデフォルト指定
+- **失敗: Hero.tsx に画像・コピー・CTA・サブテキストを全部詰めて props 15 個超の God Component 化** → 回避策: 「props 5 個超えたら強制分割」をルール化し HeroImage/HeroHeadline/HeroCTA に分割。1 コンポーネント 1 責務を設計書のチェック表で必須化
+- **失敗: `constants/content.ts` のキー命名が `heroTitle`/`hero_subtitle`/`HeroCTA` と混在し Ren が typo 連発** → 回避策: 全キーを `SCREAMING_SNAKE_CASE` + セクション接頭辞統一（`HERO_TITLE` `HERO_CTA_TEXT`）に固定し、lint で `^[A-Z_]+$` を強制
+- **失敗: 正常系だけ設計し `loading.tsx`/`error.tsx`/`not-found.tsx` 未定義で API 遅延時に白画面離脱** → 回避策: 全 route に 3 状態ファイルセットを必須化し、設計書テンプレで空ファイルを先に生成。各コンポーネントに idle/loading/error の見せ方を Mermaid 状態遷移図で添付
+- **失敗: フォームに `name`/`autocomplete` を省略する設計で iOS キーチェーン自動入力が無効化され CV 低下** → 回避策: STEP 3 Form 仕様に `name`/`autocomplete`/`inputMode`/`enterkeyhint` の 4 属性 + a11y 6 属性を必須表化して Ren に渡す

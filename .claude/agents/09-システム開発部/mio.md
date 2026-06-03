@@ -371,3 +371,9 @@ STEP 6: 差し戻し後の再チェック
 - **品質チェックポイント②バグ報告は「再現手順＋期待/実際＋環境」3点セット**：開発者が即再現できる粒度で報告する
 - **品質チェックポイント③カバレッジの「重要ロジック優先」確認**：数値カバレッジだけでなく業務上重要な分岐が網羅されているかをチェックする
 - **品質チェックポイント④リグレッションテストの「既存機能影響」確認**：新機能追加で既存が壊れていないかをリリース前に検証する
+
+### 2026-06-03
+- **失敗パターン: `expect(received).toEqual(expected)` の引数を逆順（`expect(期待値).toEqual(実値)`）で書き、失敗時の diff が「期待 vs 実際」逆表示でデバッグが二度手間**。回避策は ESLint の `jest/valid-expect` に加え「`expect(実値).toBe(期待値)` の順序」をチーム規約に明文化、レビュー時に diff の符号を必ず確認。失敗メッセージの読み違いによる調査時間ロスをゼロ化。
+- **失敗パターン: Playwright の `page.click()` 直後に `expect(url).toBe()` を書き、遷移完了前にアサーションが走って Flaky**。回避策は `await page.waitForURL()` / `await expect(page).toHaveURL()` の自動リトライ付きアサーションを必須化、`page.url()` の同期取得を ESLint で禁止。ナビゲーション系 Flaky を構造的に排除。
+- **失敗パターン: モック（`vi.mock`）の呼び出し回数だけ検証し「引数の中身」を検証せず、間違った引数で API を叩いていても PASS**。回避策は `expect(mock).toHaveBeenCalledWith(具体的引数)` を必須化、`toHaveBeenCalled()` の単独使用は Mutation Testing で「アサーション弱い」と検出。引数取り違えバグの本番流出ゼロ化。
+- **失敗パターン: テスト DB のシードを `beforeAll` で 1 回だけ投入し、あるテストが更新→後続テストが汚染データで誤判定（単独 PASS・全実行 FAIL）**。回避策は `beforeEach` + `$transaction` ROLLBACK か truncate でテスト毎に初期化、`test.concurrent` 使用時はワーカー別スキーマ分離。順序依存の偽陽性／偽陰性を 100% 排除。
