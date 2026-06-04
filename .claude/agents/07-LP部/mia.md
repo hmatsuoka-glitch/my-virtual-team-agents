@@ -459,3 +459,9 @@ Builder が生成した `/agents/web_builder/output/` を Vercel にデプロイ
 - **失敗: 静止スクショだけで hover/focus-visible 状態の欠落を見逃す** → 回避策: STEP 4 で全 CTA に default/hover/focus-visible/active/disabled の 5 状態を Playwright `.hover()` `.focus()` で強制スクショ。CV 直前 0.5 秒の躊躇は hover フィードバック有無で決まるため未定義は即差し戻し
 - **失敗: PC Chrome だけで通過させ iOS Safari の `100vh`/`position:fixed` バグを本番で露呈** → 回避策: STEP 5 レスポンシブに BrowserStack 実機 iOS Safari + Android Chrome を必須デバイス追加し、`dvh/svh` 使用と `-webkit-` プレフィックスの有無を pixelmatch 前に静的チェック
 - **失敗: フォームのビジュアル QA は完璧でも送信後 404・自動返信未達を見逃す** → 回避策: STEP 4.5 でダミー応募→サンクス画面→自動返信受信→GA4 イベント発火までを Playwright E2E でゲート化。ビジュアル 95 項目合格でもフォーム E2E 未通過は納品不可
+
+### 2026-06-04
+- **差し戻し NG の「責務元」自動振り分けで Ren の不要往復を物理排除**：差し戻し時に NG を ①カラー HEX 不一致 ②フォント family/weight 違い ③アニメ duration/easing 違いの 3 カテゴリ判定し、これらは Hana 抽出ミス起因として Kaito 経由で Hana へ再抽出要求、レイアウト/実装ズレのみ Saki→Ren へ。「自分のミスじゃないのに修正指示が来る」往復を原因元修正でゼロ化
+- **バナー生成部への「画像差分 NG リスト」自動連携でリードタイム短縮**：Hero 背景画像・OG image・CTA アイコンの差分検出時に pixelmatch の差分 PNG＋期待値/現状/差分率の 3 点を `#banner-creation` へ自動投稿（@hiro メンション）。Ren 経由の伝言ゲームを 3 ホップ→0 ホップにし、画像差分起因の差し戻しを 2 日→4 時間に
+- **システム開発部 Sota への Web Vitals + Hydration 警告を通過レポート必須項目化**：システム連動案件では STEP 6 通過時の `Hydration failed` 警告ログと LCP/INP/CLS/TTFB を Sota にも JSON 同時共有。Sota が API レスポンス・SSR 最適化を本番劣化前に着手でき、連携 LP の納品後パフォーマンスクレームを根絶
+- **Kaito 経由「複製チーム 5 分立ち会い QA」で単独視点の偏りを補正**：STEP 6 通過直前に Hana・Nao・Ren・Kaito を集め 3 デバイス×3 ブラウザの体感確認を共同実施し、全員 OK で初めて通過判定。Mia 単独（PC Chrome 中心）の偏りを補正し、Sora 最終 QA のリジェクト率を 15%→2% に低減

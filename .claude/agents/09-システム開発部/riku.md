@@ -332,3 +332,9 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - **失敗パターン: 画像に `width`/`height` 未指定で読み込み完了時にレイアウトが飛び、CLS が 0.3 超でリスト全体がガクつく**。回避策は `next/image` で必ず `width`/`height` か `fill`+`aspect-ratio` を指定、フォント読込時の FOUT も `next/font` の `display: 'swap'` + サイズ予約で抑制。CLS < 0.1 を PR ゲート化、要素挿入は高さ予約済みスケルトンで吸収。
 - **失敗パターン: フォーム状態を `useState` 個別管理で 10 個並べ、1 文字入力で全体再レンダリング→入力がもたつく**。回避策は React Hook Form の非制御コンポーネント（`register`）で再レンダリングを入力フィールド単位に局所化。大量入力 UI は `useState` 集中管理を避け、INP < 200ms を維持。入力遅延クレームをゼロ化。
 - **失敗パターン: `fetch` のエラーを `try/catch` だけで握りつぶし、`res.ok` を確認せず 404/500 のボディを正常データとして描画**。回避策は fetch 後に必ず `if (!res.ok) throw` を挟む、TanStack Query なら `throwOnError` でエラー境界へ委譲。`<ErrorBoundary>` + ローディング/エラー/空の 3 状態 UI を全データ取得で必須化、無言の壊れた描画を排除。
+
+### 2026-06-04
+- **Ao との型共有は「`[api-types-update]` タグ通知」で同期連携**：Ao が `packages/api-types` の Zod スキーマを更新したら PR タイトルに該当タグを必須付与、GitHub Actions が Riku へ Slack 通知。Riku が即 `pnpm install` 反映し、`react-hook-form + zodResolver` で型・バリデーションを 1 ソース化。「コンパイルは通るが実行時エラー」事故ゼロ化、FE/BE 同期 24h 以内維持。
+- **Mio への QA 引き渡しは「テスト容易性パック」標準添付連携**：実装完了 PR に「① 全コンポーネント `data-testid` 一覧 ② Storybook ストーリー URL（成功/失敗/空/ローディングの 4 種）③ 主要フロー Loom 30 秒 ④ axe-core レポート」を必須添付。Mio が `getByRole`/`getByLabelText` ベースでテスト可能、準備工数 30 分→5 分、「あの要素どう参照？」往復ゼロ化。
+- **Nao の設計書受け取りは「Riku 向け 5 ページ即読破＋不明点即返却」連携**：「Riku 向け」セクションのみ 15 分で読破し、コンポーネント粒度・状態管理スコープ・API 呼び出しタイミングの不明点を Slack に箇条書きで即返却。着手前に設計と実装のズレをゼロ化し、後付けの「あれ違った」改修を消滅。
+- **ren/kaito（07-LP）との実装住み分けは「`'use client'` 境界ルール」で連携**：フォーム送信・状態管理は Riku、静的表示・SSG は ren/kaito と STEP 0 で合意。共通 Tailwind 設定・shadcn/ui は monorepo `packages/ui` に集約し両者が import。デザイン乖離ゼロ化、コード重複 60% 削減。

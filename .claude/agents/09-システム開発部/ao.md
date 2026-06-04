@@ -364,3 +364,8 @@ API 設計・データベース構築・認証/認可・決済連携を担当。
 - **失敗パターン: SELECT...FOR UPDATE や Serializable を使わず「在庫減算→注文作成」を実装し、2 ユーザー同時購入で在庫マイナス** → 回避策: race condition リスク処理は `prisma.$transaction(fn, { isolationLevel: 'Serializable' })` か行ロック取得を必須化（理由：デフォルトの READ COMMITTED ではノンリピータブルリードで同時更新が衝突）。実例：同時応募で枠数マイナス→Serializable 指定後整合性担保
 - **失敗パターン: OAuth ログイン成功直後の JIT プロビジョニング失敗で users 行が無く、ユーザーが白画面リロード地獄に陥り問い合わせ殺到** → 回避策: 認証コールバック内で `upsert` トランザクション必須化、失敗時は `/onboarding/error?code=PROV_FAILED` へ明示リダイレクト＋ Slack #incidents 通知（理由：認証成功と DB 行存在は別事象でギャップがエッジケース化）。実例：初回ログイン白画面→upsert 化後初回離脱ゼロ
 - **失敗パターン: エラーログに `ECONNREFUSED 127.0.0.1:5432` とだけ出て、運用者が DB 死/ネットワーク/設定ミスの 3 分岐判定で 5 分以上停止** → 回避策: 全エラーログに「障害種別タグ（DB_CONN/EXT_API/AUTH/VALIDATION）＋想定原因 Top3 ＋一次対応コマンド（`pg_isready`/`vercel env ls`）」の 3 点メタを構造化出力（理由：生のスタックトレースだけでは深夜対応時の切り分けに時間がかかる）。実例：MTTR 30 分→5 分に短縮
+
+### 2026-06-04
+- **Riku（FE）への「Zod スキーマ＋OpenAPI ドキュメント設計確定直後 30 分以内共有」連携**：API 実装完成を待たせず、設計確定 30 分以内に Zod スキーマと `/doc` URL を Riku 専用 Notion ページへ共有。Riku は型定義だけで `react-hook-form + zodResolver` の FE バリデーション層を先行実装でき、API 完成時に fetch 追加のみで完結。FE/BE 並列実装率 100%、Kai のタスク分解時に「API 待ちで Riku ブロッキング」を構造的に排除
+- **Mio（QA）への「テスト容易性パック ZIP 同梱」引き渡し**：実装完了報告に `scripts/gen-test-fixtures.ts` 生成の「正常系 cURL ＋ 401/403/422/500 異常系再現コマンド ＋ シード投入スクリプト ＋ 認可ペアテスト用 2 アカウント（自分 200・他人 403）＋ EXPLAIN ANALYZE 結果 Top5」を ZIP 同梱。Mio のテスト準備 30 分→2 分、QA 差し戻し 3 回→1 回に圧縮。Vitest テスト雛形も同梱しテスト中身詰めに集中させる
+- **07-LP 部 ren/nao との「管理画面付き LP の API 境界」事前すり合わせ**：応募フォーム→DB 保存型 LP では「`/api/*` から先は Ao 担当」と Kai の STEP 0 明文化に従い、LP 部 ren が実装するフォーム UI のフィールド名・必須項目を Ao の Zod スキーマと着手前に突き合わせ。フィールド命名やバリデーション仕様の齟齬を実装前に解消し、LP 部とのフォーム連携の手戻りゼロ化。Kuu の Vercel 一括デプロイ前提で環境変数も共有

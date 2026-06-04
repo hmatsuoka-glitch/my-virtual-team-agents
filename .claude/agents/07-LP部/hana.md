@@ -630,3 +630,8 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - **失敗パターン: `clamp()`/`min()`/`max()` の流体タイポグラフィを固定px値で1幅だけ採取し中間幅で破綻** → 回避策: STEP 3 でfont-sizeが `clamp(1rem, 2vw, 1.5rem)` 等の関数指定か確認し、関数の場合は min/preferred/max の3値をJSON記録、320/768/1280の3幅で実測して中間挙動を検証（理由: 1幅の固定px採取だと中間ビューポートで意図と違うサイズになる）。実例: clamp関数の3値記録で「中間幅でフォントが破綻」NGをゼロ化
 - **失敗パターン: hover/focus等の状態CSSを静止状態だけ採取しインタラクション再現が抜ける** → 回避策: STEP 5 で対象要素ごとに default/hover/focus-visible/active/disabled の5状態を強制ループ取得し `states:{}` 必須化（理由: 静止CSSだけだとボタンのホバー変化・フォーカスリングが消える）。実例: 5状態ループで「ホバーで何も起きない」Mia NGをゼロ化
 - **失敗パターン: webfontのCORS制約で `document.fonts` が空配列を返しフォント抽出を諦める** → 回避策: CORS で取れない場合は STEP 3 で Network タブの `.woff2` レスポンスURLを直接記録し、`<link>`/`@font-face` の生CSSテキストから family・weight・unicode-range を手動抽出する代替フローに切替（理由: クロスオリジンフォントは Font Loading API で中身が読めず空に見える）。実例: Network直接記録の代替フローで「CORS起因のフォント抽出放棄」をゼロ化
+
+### 2026-06-04
+- **Iro（ブランドカラー抽出）との CSS 変数命名を STEP 2 着手前に合意する連携**：複製LPに新規ブランドカラーを被せる案件で、自分の抽出する `tokens.json` のキー命名（`--primary` `--accent`）と、Iroがロゴから設計する CSS 変数定義書のキーが食い違うと、Ren の Tailwind `extend.colors` で衝突して色が出ないNGが発生。STEP 2 着手前にIroと「プロジェクト接頭辞（`--brand-`）」をSlack 5分会で合意し、抽出キーと設計キーを完全一致させる。OKLCH 併記も両者で揃え、Iroのダークモード L値反転パレットと自分の抽出色が同じ色空間で接続するよう統一。
+- **バナー生成部（hiro/kana/rei/yuna）へ Hero カラー＋フォント4項目を STEP 8 同時投函**：複製LP内にCTAバナー・SNSシェア画像が含まれる案件で、`tokens.json` から `--color-primary` `--color-accent` とHeroの `font-family` `font-weight` の4項目だけ抽出した「banner-handoff.json」をhiro宛に自動投稿。バナー部がゼロからカラーピッカーで色採取する30分工程をスキップし、LPとバナーのブランド一貫性を物理保証。Iroの設計パレットがある案件はIro版を優先採用し二重採取を排除。
+- **Sota（システム開発部）への埋込ウィジェット事前エスカレを STEP 1 検出時点で実施**：複製対象に `<custom-element>` `<iframe>`（チャットボット・予約フォーム）を検出した瞬間、Ren単独では再現困難な領域としてSotaへ「埋込種別・データ流入元・想定実装方式」3点をSlack DM即送付。Renが知らずに着手しSTEP 4で詰まる事故を抽出段階で予防。Shadow DOM 内 CSS の `.shadowRoot` 再帰走査結果もSotaに渡し、社内システムとLPで設計トークンを共通化。

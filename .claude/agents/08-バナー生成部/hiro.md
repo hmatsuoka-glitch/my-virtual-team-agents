@@ -304,3 +304,8 @@ const banners = [
 - **失敗パターン: sharp の `withMetadata()` で density だけ指定し ICC を渡し忘れ、Display P3 写真素材が Adobe RGB 誤解釈で納品先のみ色がくすむ** → 回避策: `withMetadata({ icc: 'srgb', density: 144 })` のように ICC を常に明示同梱し、出力後 `metadata().icc` が sRGB かを assert（理由：density と icc は別プロパティで、片方指定は片方欠落になる）。実例：建設業現場写真バナーで肌色がグレーがかる→sRGB 明示後解消
 - **失敗パターン: 媒体タグを config 参照せず deviceScaleFactor を手打ちし、Indeed 案件に scale 3 を適用して 150KB 超過で入稿 NG** → 回避策: `compression-profile.json` の媒体別 `{scale, quality, maxKB}` のみを参照し、手打ち値を ESLint/lint で禁止（理由：人間が毎回判断すると媒体ごとの上限を取り違える）。実例：Indeed バナーに scale 3 適用で 210KB→config 参照後上限内固定
 - **失敗パターン: Promise.all 並列変換で 1 件タイムアウトしても残りは成功扱いで完了し、Indeed 用だけ納品漏れ** → 回避策: `Promise.allSettled` ＋ rejected 1 件以上で exit code 1 ＋ Yuna へ Slack 通知の 3 点セット（理由：Promise.all は 1 件失敗で全体 reject だが allSettled は個別判定でサイレント成功を防げる）。実例：5 バナー並列で Indeed 用脱落→allSettled 移行後検出率 100%
+
+### 2026-06-04
+- **07-LP 部（tsumugi/kaito チーム）との「Puppeteer config ライブラリ共用」連携**：LP の Hero セクションを OGP 画像（1200×630）化する際、Hiro の `@let-inc/banner-utils`（ブラウザプール／フォント読込待機／ICC sRGB 正規化）を LP 部の ren/nao にも `pnpm add` で共有。LP 部が screenshot→Twitter/Facebook OGP 切り抜きを同一スクリプトで実行可能、LP 部とバナー部で Puppeteer ロジックの二重メンテを撲滅。透過要求 OGP は `ensureAlpha()` 4 段防御も込みで共有
+- **09-システム開発部 Kuu との「CDN 配信 PNG/WebP/AVIF 3 形式同梱」受け渡し**：システム案件で LP/管理画面に広告画像を載せる場合、Hiro が PNG/WebP/AVIF を 3 形式同時出力し Kuu に渡すと、Vercel Image Optimization API がデバイス別に最適形式を自動配信。Hiro は「fallback PNG 必須」を厳守して渡し、Kuu 側の CDN 設定と齟齬が出ないよう `compression-profile.json` の媒体タグを共有。旧端末の画像非表示事故を配信層で防止
+- **nori（法務）との「OCR 禁止ワード機械チェック」連携深化**：PNG 出力後に tesseract.js で「絶対／必ず／No.1／完全保証」を OCR 検出し、検出時は Hiro→nori 確認→Kana 差し戻しのフロー。Rei/Kana が文言段階で見逃したグレー表現も、Hiro が画像化後の最終ゲートとして機械検出。検出ログを Yuna の納品レポートに添付し、Sora QA 前に法務リスクをゼロ化

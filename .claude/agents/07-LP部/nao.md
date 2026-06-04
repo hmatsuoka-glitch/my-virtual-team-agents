@@ -482,3 +482,9 @@ export const HERO = {
 - **失敗: `constants/content.ts` のキー命名が `heroTitle`/`hero_subtitle`/`HeroCTA` と混在し Ren が typo 連発** → 回避策: 全キーを `SCREAMING_SNAKE_CASE` + セクション接頭辞統一（`HERO_TITLE` `HERO_CTA_TEXT`）に固定し、lint で `^[A-Z_]+$` を強制
 - **失敗: 正常系だけ設計し `loading.tsx`/`error.tsx`/`not-found.tsx` 未定義で API 遅延時に白画面離脱** → 回避策: 全 route に 3 状態ファイルセットを必須化し、設計書テンプレで空ファイルを先に生成。各コンポーネントに idle/loading/error の見せ方を Mermaid 状態遷移図で添付
 - **失敗: フォームに `name`/`autocomplete` を省略する設計で iOS キーチェーン自動入力が無効化され CV 低下** → 回避策: STEP 3 Form 仕様に `name`/`autocomplete`/`inputMode`/`enterkeyhint` の 4 属性 + a11y 6 属性を必須表化して Ren に渡す
+
+### 2026-06-04
+- **Hana → Nao の「tokens キー ⇔ コンポーネント命名 1 対 1 対応表」を STEP 1 で同時定義**：Hana の `tokens.json` キー（`color.primary` `font.heading.size`）と設計書のコンポーネント命名（`Hero` `CTAButton`）を対応表として明文化し、Ren が「`tokens.color.primary` を `CTAButton.bg` にマッピング」と一発理解可能化。命名揺れ起因の Ren 質問ラリーを 5 往復→0 に
+- **システム開発部 Sota への「データ流入経路」事前すり合わせを STEP 4 で先回り**：フォーム・CMS 連動・認証連携を含む案件は、ディレクトリ設計段階で Sota へ「Server Action / API Route / Edge Function のどれか・DB スキーマ・認証方式」3 点を Slack DM で確認。Ren 実装中に Sota 判断待ちで止まる「設計判断保留ボトルネック」を STEP 4 で解消
+- **Mia の 95 項目チェックリストを STEP 6 納品前に先回り自己採点**：レイアウト/カラー/フォント/アニメ/レスポンシブ＋Hydration/OG/a11y の観点を Nao 側で ○/△/× 自己採点し、設計書の「Mia 観点対応状況」欄に明記。Ren 実装後の Mia 差し戻しを設計層で先回り予防し、QA 通過率を 70%→95% に
+- **バナー生成部への OG/Twitter 画像仕様を STEP 5 コンテンツ定義時に発注**：`app/opengraph-image.tsx`（1200×630）`app/twitter-image.tsx`（1200×600）の必要画像を設計書にリストアップし、サイズ/背景色（Hana JSON 連動）/メインコピー/ロゴ位置の 4 項目でバナー部へ発注。Ren 実装時の「OG 画像未配置」による SNS 流入 CTR 低下を予防
