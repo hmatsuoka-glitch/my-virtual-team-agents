@@ -512,3 +512,9 @@ export const HERO = {
 - **「画像スロット仕様表」を全画像枠で確定する確認**：各画像枠の「必要寸法・アスペクト比・最大容量KB・object-fit 方針（cover/contain）」を表化せずに進めると、クライアント差し替え素材（縦長写真・低解像度ロゴ）で顔切れ・ぼやけが発生する。STEP 5 コンテンツ定義時に画像スロット仕様表を必須化し、バナー部・クライアントへの素材発注仕様としてもそのまま流用できる状態で納品する
 - **セクション id ⇔ ヘッダーアンカーの「1対1整合」チェック**：ナビの `href="#about"` と Section コンポーネントの `id` の対応表がないと、Ren 実装時に id 命名がズレてアンカーが無反応になり、fixed ヘッダー高さ分の `scroll-margin-top` 未指定で見出しが隠れる。STEP 1 のセクション洗い出し時にナビ項目と id の対応表＋`scroll-margin-top` 指定値を設計書に必須記載
 - **設計変更時「changelog 付き再納品」ルール確認**：Ren 実装着手後に設計書を更新する場合、変更箇所を伝えず差し替えると Ren が旧版準拠のまま実装を続けて型不一致が再発する。再納品時は冒頭に「変更日／変更セクション／旧→新の差分／影響コンポーネント」の changelog を必須化し、無印の上書き納品を禁止して設計と実装の版ズレを防止する
+
+### 2026-06-13
+- **業界用語再確認「コロケーション（colocation）」原則のディレクトリ設計適用**：コロケーション＝「一緒に変更されるものは一緒に置く」原則。LP の Hero 専用サブコンポーネント・専用スタイル・専用テスト・専用定数を `components/sections/hero/` 配下にまとめ、全体共有の `ui/` `constants/` には2箇所以上で再利用される物だけを昇格させる。「とりあえず constants.ts に全部」「とりあえず ui/ に全部」の集約過多は変更影響範囲を見えなくするアンチパターンとして STEP 4 の配置判定基準に明文化
+- **「Compound Components パターン」の定義と props 肥大の解消手段としての位置付け**：`<Card>` に `title/subtitle/image/footer/badge...` と props を足し続ける代わりに、`<Card><Card.Image/><Card.Title/><Card.Footer/></Card>` と子コンポーネント合成で構造をJSX側に出すのが Compound Components。「props 5 個超で強制分割」ルールの分割先選択肢として「子コンポーネント分割」と「Compound 化」の2通りがあり、レイアウト順序が案件ごとに変わる要素（カード/FAQ/料金表）は Compound が適切という判定基準を設計書テンプレに追加
+- **「制御（controlled）/ 非制御（uncontrolled）コンポーネント」のフォーム設計での使い分け再確認**：controlled＝値を React state で管理（`value`+`onChange`）、uncontrolled＝DOM が値を保持（`defaultValue`+`ref`/FormData）。LP のお問い合わせフォームは Server Action + FormData なら uncontrolled が基本で、リアルタイム文字数カウント・条件分岐表示が必要なフィールドのみ controlled にする。設計書の Form 仕様に各フィールドの C/U 区分を明記し、Ren が全フィールドを useState 管理して不要な再レンダリングを生む実装を予防
+- **「barrel export（`index.ts` 集約再エクスポート）」の弊害の再確認**：`components/index.ts` から全コンポーネントを `export * from ...` で再エクスポートすると import 記述は短くなるが、1コンポーネント参照で barrel 経由の全モジュールが評価され、tree shaking 阻害・ビルド時間増・循環参照の温床になる。Next.js 案件の設計では barrel を作らず「直接パス import（`@/components/sections/hero/Hero`）」を規約とし、ディレクトリ設計書に import 規約として明記する
