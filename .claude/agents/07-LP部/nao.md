@@ -518,3 +518,9 @@ export const HERO = {
 - **「Compound Components パターン」の定義と props 肥大の解消手段としての位置付け**：`<Card>` に `title/subtitle/image/footer/badge...` と props を足し続ける代わりに、`<Card><Card.Image/><Card.Title/><Card.Footer/></Card>` と子コンポーネント合成で構造をJSX側に出すのが Compound Components。「props 5 個超で強制分割」ルールの分割先選択肢として「子コンポーネント分割」と「Compound 化」の2通りがあり、レイアウト順序が案件ごとに変わる要素（カード/FAQ/料金表）は Compound が適切という判定基準を設計書テンプレに追加
 - **「制御（controlled）/ 非制御（uncontrolled）コンポーネント」のフォーム設計での使い分け再確認**：controlled＝値を React state で管理（`value`+`onChange`）、uncontrolled＝DOM が値を保持（`defaultValue`+`ref`/FormData）。LP のお問い合わせフォームは Server Action + FormData なら uncontrolled が基本で、リアルタイム文字数カウント・条件分岐表示が必要なフィールドのみ controlled にする。設計書の Form 仕様に各フィールドの C/U 区分を明記し、Ren が全フィールドを useState 管理して不要な再レンダリングを生む実装を予防
 - **「barrel export（`index.ts` 集約再エクスポート）」の弊害の再確認**：`components/index.ts` から全コンポーネントを `export * from ...` で再エクスポートすると import 記述は短くなるが、1コンポーネント参照で barrel 経由の全モジュールが評価され、tree shaking 阻害・ビルド時間増・循環参照の温床になる。Next.js 案件の設計では barrel を作らず「直接パス import（`@/components/sections/hero/Hero`）」を規約とし、ディレクトリ設計書に import 規約として明記する
+
+### 2026-06-16
+- **効率化：設計書を「ページ構成/コンポーネント定義/props型/constants例/データフロー図/Performance Budget/8観点表/Mia観点先回り」8セクションのスケルトンから埋める**：毎回ゼロから Markdown 構造を書く手間を撤廃し、案件特性に応じた埋め込みだけで完結。設計書作成を 90 分→25 分程度に圧縮し、複数案件の並行設計を加速
+- **効率化：Hana の JSON から `zod-to-ts` で `types/index.ts` を CLI 1 コマンド生成し props 型の手書きを廃止**：JSON Schema→Zod→TypeScript Interface のパイプラインで実行時バリデート可能な型を自動生成し、Ren へはビルド検証済みの型ファイルを添付。手書きタイポ起因の型エラー差し戻しをゼロに
+- **効率化：状態遷移（idle/hover/focus/disabled/loading/error）を YAML 1 ファイル→`mermaid-cli` で SVG 自動出力し質問ラリーを潰す**：「ローディングどう見せる？」「エラー時は？」の Ren/Mia 質問を設計図で先回り回答する運用に変えると、実装時の判断迷いラリーが 5 往復→1 往復に。状態定義を視覚化して設計層で確定させる
+- **効率化：Mia の95項目を STEP 6 納品前に「○/△/×」自己採点し、QA を△/×に集中させて通過率を底上げ**：レイアウト/カラー/フォント/アニメ/レスポンシブ＋Hydration/OG/a11y を設計側で先回り採点し設計書に明記すると、Mia が○項目を流し見でき QA が高速化。Ren 実装後の Mia 差し戻しを設計層で予防し通過率 70%→95% に

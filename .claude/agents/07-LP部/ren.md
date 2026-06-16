@@ -545,3 +545,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **「Stacking Context（重なり文脈）」の生成条件の正確な理解**：z-index が「効かない」原因の9割は、親要素が `transform`・`filter`・`opacity<1`・`position:fixed` 等で新しい Stacking Context を生成し、子の z-index がその文脈内に閉じ込められること。`z-[9999]` を足す対処は誤りで、「どの祖先が文脈を作っているか」を DevTools で特定し階層表（header/floating/modal/toast）の正しい層へ要素を移すのが正対処。モーダル系は `createPortal` で body 直下に出すのを標準とする
 - **「debounce / throttle」の定義と LP 実装での使い分け再確認**：debounce＝イベントが止んでから一定時間後に1回だけ実行（入力バリデーション・リサイズ後の再計算向き）、throttle＝期間内に最大1回ずつ実行（スクロール連動のプログレスバー・ヘッダー変化向き）。スクロールハンドラに debounce を使うと「スクロール中ずっと反応しない」誤動作になる典型ミスがあるため、用途→手法の対応を実装テンプレに固定。なお要素出現検知は両者でなく IntersectionObserver が正解
 - **「`content-visibility: auto` + `contain-intrinsic-size`」による長尺 LP の描画スキップ最適化**：`content-visibility: auto` は画面外セクションのレンダリング（style/layout/paint）を丸ごとスキップする CSS で、10セクション超の縦長 LP では初期描画コストを大幅削減できる。ただし `contain-intrinsic-size: auto 800px` で予約高さを併記しないとスクロールバーが暴れ CLS を悪化させる。「ファーストビュー外のセクションに2点セットで付与」を実装ルール化し、JS の lazy load と役割を区別して使う
+
+### 2026-06-16
+- **効率化：新規 LP 案件起動を `pnpm create lp-template <client>` 自社 CLI 1 コマンドで初期構築 2 時間→30 秒に**：Next.js 15＋Tailwind v4＋shadcn＋Biome＋Husky＋Playwright＋Lighthouse CI の一括セットアップを定型化し、毎案件の create-next-app→各種設定→lint 統合の手作業を撤廃。実装着手までのゼロ摩擦化
+- **効率化：Hana JSON→`tailwind.config`／`next/font`／配色注入を `pnpm sync:tokens` 1 コマンド化し STEP 1 を 45 分→90 秒に**：`tokens.json` を Single Source of Truth にして手動転記を廃止すると、Hana 仕様変更時の Ren 転記ミス起因の色ズレ Mia 差し戻しがゼロに。スタイル設定の所要を圧縮
+- **効率化：フォーム実装を「Zod＋React Hook Form＋Server Action＋`after()`＋`useFormStatus`」テンプレで 90 分→18 分に**：INP 200ms 切り＋a11y 6 属性＋二重送信防止＋非同期処理のレスポンス外逃がしを 1 テンプレに標準装備。毎回の組合せ実装を撤廃し「送信後の体感遅延」NG を企画段階で予防
+- **効率化：`pnpm dev:fresh`（`.next/cache` クリア＋Turbopack）を husky `post-checkout` で自動実行し HMR 不発を物理ゼロに**：ブランチ切替時の「保存しても反映されない→再起動 3 秒待ち」を自動キャッシュクリアで根絶。1 日 200 回 HMR の合計待機を 460 秒→45 秒に削り実装ループを高速化
