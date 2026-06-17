@@ -551,3 +551,10 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **効率化：Hana JSON→`tailwind.config`／`next/font`／配色注入を `pnpm sync:tokens` 1 コマンド化し STEP 1 を 45 分→90 秒に**：`tokens.json` を Single Source of Truth にして手動転記を廃止すると、Hana 仕様変更時の Ren 転記ミス起因の色ズレ Mia 差し戻しがゼロに。スタイル設定の所要を圧縮
 - **効率化：フォーム実装を「Zod＋React Hook Form＋Server Action＋`after()`＋`useFormStatus`」テンプレで 90 分→18 分に**：INP 200ms 切り＋a11y 6 属性＋二重送信防止＋非同期処理のレスポンス外逃がしを 1 テンプレに標準装備。毎回の組合せ実装を撤廃し「送信後の体感遅延」NG を企画段階で予防
 - **効率化：`pnpm dev:fresh`（`.next/cache` クリア＋Turbopack）を husky `post-checkout` で自動実行し HMR 不発を物理ゼロに**：ブランチ切替時の「保存しても反映されない→再起動 3 秒待ち」を自動キャッシュクリアで根絶。1 日 200 回 HMR の合計待機を 460 秒→45 秒に削り実装ループを高速化
+
+### 2026-06-17
+- **失敗: `next/image` を使わず生の `<img>` で実装し、width/height 未指定で読込時に CLS が発生・LCP も劣化** → 回避策: 画像は原則 `next/image` を使い、やむを得ず `<img>` を使う場合も `width`/`height`（または aspect-ratio）を必ず明示。Hero 画像には `priority`、ファーストビュー外は `loading="lazy"` を付与し、レイアウトシフトを実装の不変条件として ESLint（`@next/next/no-img-element`）で検出する
+- **失敗: 環境変数を `NEXT_PUBLIC_` 接頭辞なしでクライアントコンポーネントから参照し本番で `undefined` になり機能停止** → 回避策: クライアント側で読む値は必ず `NEXT_PUBLIC_` 接頭辞を付け、サーバー専用シークレットは絶対にクライアントへ渡さない切り分けを徹底。`.env.example` に全キーを列挙し、起動時に必須変数の存在を Zod で検証して欠落を即時エラー化する
+- **失敗: フォントを `<link>` 直書きや `@import` で読み込み、FOUT・追加リクエスト・レイアウトシフトが発生** → 回避策: フォントは `next/font/google` または `next/font/local` でセルフホスト＋自動 `size-adjust` を使い、サブセット化と `display: swap` を指定。`@import` での Web フォント読込を禁止し、フォント起因の CLS とレンダリングブロックを実装段階で排除する
+- **失敗: クライアントコンポーネントに `'use client'` を付けすぎてページ全体が CSR 化し、SEO・初期表示が劣化** → 回避策: `'use client'` は実際に hooks/イベントを使う末端コンポーネントだけに付け、データ取得・静的部分は Server Component のまま保つ。インタラクティブ部分を葉に切り出す設計を守り、`'use client'` をページ最上位に置く実装を避ける
+- **失敗: `dangerouslySetInnerHTML` で CMS/外部由来の HTML を無サニタイズで描画し XSS の穴を作る** → 回避策: 外部由来 HTML を描画する際は必ず DOMPurify 等でサニタイズしてから渡し、可能なら Markdown→安全なレンダラに変換する方式へ。`dangerouslySetInnerHTML` の使用箇所は grep で棚卸しし、サニタイズ無しの直挿入を build/レビューで禁止する
