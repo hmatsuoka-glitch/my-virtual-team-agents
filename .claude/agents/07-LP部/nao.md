@@ -531,3 +531,9 @@ export const HERO = {
 - **失敗: z-index を `9999` `99999` と場当たりで積み、モーダル・固定ヘッダー・Cookie バナー・ドロップダウンの重なり順が破綻** → 回避策: z-index を `--z-header: 100 / --z-dropdown: 200 / --z-modal: 1000 / --z-toast: 1100` のようにレイヤー設計表で段階定義し、生数値の直書きを禁止。重なり要素の優先順位を設計書のレイヤーマップで先に決め、Ren が任意の大きい数で上書きする事故を防ぐ
 - **失敗: フォーム送信中の二重送信防止を設計に含めず、Ren が `disabled` 制御を入れず連打で重複応募が発生** → 回避策: Form 仕様に「submit 中は `pending` 状態でボタン `disabled`＋ラベルを『送信中...』に切替」を必須記載し、`useFormStatus`/`pending` の状態を props 設計に組込む。多重送信・重複リードを設計層で構造的に防止する
 - **失敗: 長い1ページ LP のセクションを全て初期ロードで描画する設計にし、下部の重い画像・iframe まで一括読込で LCP 悪化** → 回避策: ファーストビュー外のセクション（地図 iframe・YouTube 埋込・下部ギャラリー）に `loading="lazy"`／動的 import／Intersection Observer での遅延表示を設計書で明示。初期描画に不要な要素を遅延させる方針を STEP 4 のパフォーマンス budget に含める
+
+### 2026-06-20
+- **業界用語再確認「lifting state up（状態の引き上げ）/ colocation（状態の局所配置）」の設計判断軸**：複数コンポーネントで共有する状態は共通の親へ引き上げる（lifting state up）、単一コンポーネント内で完結する状態はそのコンポーネントに局所配置する（colocation）。設計で全状態をトップに集めると props drilling が、全部を末端に置くと共有不能が起きる。STEP 3 props 設計時に各 state を「共有範囲は何コンポーネントか」で判定し、2箇所以上＝引き上げ／1箇所＝局所、を明記して Ren の状態配置迷いをゼロにする
+- **「presentational / container コンポーネント」分離パターンの RSC 時代での再定義**：従来の見た目担当（presentational）とロジック担当（container）の分離は、Next.js 14+ では「データ取得する Server Component（container 的）」と「表示専用 Client/Server Component（presentational 的）」の境界に対応する。STEP 2 で各コンポーネントを「データを fetch するか／props を受けて表示するだけか」で2分し、fetch 層と表示層を混在させない設計にして再利用性とテスト容易性を担保する
+- **「データフェッチの瀑布（fetch waterfall）/ 並列フェッチ」の設計用語の再確認**：瀑布＝親の fetch 完了を待って子が fetch する直列連鎖（TTFB 悪化）、並列フェッチ＝`Promise.all` や複数 Suspense 境界で同時取得。設計書のデータフロー図で「どの fetch が他の fetch の結果に依存するか」を矢印で可視化し、依存のないものは並列、依存あるもののみ直列と明記して Ren が無自覚に waterfall を作る実装を設計層で防ぐ
+- **「楽観的更新（optimistic update）」の定義とフォーム設計での適用範囲**：サーバー応答を待たず UI を先に更新し、失敗時に巻き戻す手法（React の `useOptimistic`）。採用LPの問い合わせフォームのような「送信＝1回・取り消し不可」のケースでは楽観的更新は不適切で、`useFormStatus` の pending 表示が正解。一方いいね・お気に入り等の軽量操作には有効。STEP 3 Form 仕様に「楽観的更新を使う/使わない」を操作の可逆性で判定して明記する
