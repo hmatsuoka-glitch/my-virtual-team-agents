@@ -537,3 +537,8 @@ export const HERO = {
 - **「presentational / container コンポーネント」分離パターンの RSC 時代での再定義**：従来の見た目担当（presentational）とロジック担当（container）の分離は、Next.js 14+ では「データ取得する Server Component（container 的）」と「表示専用 Client/Server Component（presentational 的）」の境界に対応する。STEP 2 で各コンポーネントを「データを fetch するか／props を受けて表示するだけか」で2分し、fetch 層と表示層を混在させない設計にして再利用性とテスト容易性を担保する
 - **「データフェッチの瀑布（fetch waterfall）/ 並列フェッチ」の設計用語の再確認**：瀑布＝親の fetch 完了を待って子が fetch する直列連鎖（TTFB 悪化）、並列フェッチ＝`Promise.all` や複数 Suspense 境界で同時取得。設計書のデータフロー図で「どの fetch が他の fetch の結果に依存するか」を矢印で可視化し、依存のないものは並列、依存あるもののみ直列と明記して Ren が無自覚に waterfall を作る実装を設計層で防ぐ
 - **「楽観的更新（optimistic update）」の定義とフォーム設計での適用範囲**：サーバー応答を待たず UI を先に更新し、失敗時に巻き戻す手法（React の `useOptimistic`）。採用LPの問い合わせフォームのような「送信＝1回・取り消し不可」のケースでは楽観的更新は不適切で、`useFormStatus` の pending 表示が正解。一方いいね・お気に入り等の軽量操作には有効。STEP 3 Form 仕様に「楽観的更新を使う/使わない」を操作の可逆性で判定して明記する
+
+### 2026-06-22
+- 2026年のコンポーネント設計は「Atomic Designより機能単位（feature-based）のディレクトリ構成」が中小LPで主流化。粒度過多を避け保守性を優先する流れ
+- props設計では「必須/任意の明示＋デフォルト値」を型で縛る設計が定着。受け渡しミスを実装前に潰せる
+- 設計書に「データフロー図＋状態管理の所在」を1枚で示す形式が推奨傾向。後工程のコード生成担当との認識齟齬を減らせる

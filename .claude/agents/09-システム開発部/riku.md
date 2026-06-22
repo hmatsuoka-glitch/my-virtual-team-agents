@@ -386,3 +386,8 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - **Core Web Vitals 指標の正確な定義を再確認**：LCP（Largest Contentful Paint）＝最大要素の描画完了（読み込み体感・良好 <2.5s）、INP（Interaction to Next Paint・2024 に FID を置換）＝全インタラクションの応答性 p98（操作の重さ・良好 <200ms）、CLS（Cumulative Layout Shift）＝予期せぬレイアウトずれ累積（良好 <0.1）。FID は「最初の入力遅延だけ」だったが INP は「全操作」を見るため、重い state 更新で後半の操作がカクつくと FID 合格でも INP 不合格になる。Riku は重い更新を `startTransition`/`useDeferredValue` で非緊急化し INP を守る。
 - **レンダリング・配信用語を再整理**：TTFB（Time To First Byte）＝サーバー応答の速さ、FCP（First Contentful Paint）＝最初の描画、ストリーミング SSR＝HTML を一括でなく順次フラッシュ（`<Suspense>` 境界で骨組み先・データ後追い）、ハイドレーション＝サーバー HTML に JS のイベントを後付けする工程、PPR（Partial Prerendering）＝静的シェルを即配信し動的部分だけストリーム。Riku は「速い」を TTFB・FCP・LCP・INP のどの段階の話か切り分け、Hero は静的・ユーザー固有部分は Suspense ストリームと設計して体感速度を最適化する。
 - **画像最適化のフォーマットと属性用語を再確認**：WebP/AVIF（次世代圧縮・AVIF が最高圧縮だがデコード重め）、`srcset`/`sizes`（表示幅に応じた解像度出し分け＝レスポンシブイメージ）、`loading="lazy"`（ビューポート外を遅延読込）、`fetchpriority="high"`（LCP 画像を優先取得）、`decoding="async"`。`next/image` はこれらを自動化するが「LCP 候補に `priority` を付け lazy を外す」判断は実装者が行う。Riku はファーストビューの主役画像にだけ `priority`、それ以外は lazy と区別し、過剰 priority で逆に LCP が悪化する事故を避ける。
+
+### 2026-06-22
+- 2026年のフロントは「Server Components中心＋必要箇所だけClient」の設計が標準。JSバンドル削減で初期表示と操作性を両立する流れ
+- 状態管理は「サーバー状態（TanStack Query等）とUI状態の分離」が定着。何でもグローバルstateに置く設計は避けられる傾向
+- UI実装でアクセシビリティ（キーボード操作・aria属性）が品質要件として明確化。見た目だけでなく操作可能性まで含めて完成とみなす流れ
