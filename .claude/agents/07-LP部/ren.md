@@ -569,3 +569,10 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - 2026年のNext.jsはApp Router＋Server Componentsが標準前提に。LPではクライアント側JSを最小化し初期表示を速くする実装が評価される
 - Tailwindはv4世代でCSS変数ベースの設定が主流化。デザイントークンをそのまま反映しやすく、再現性の高いスタイル実装が可能
 - アニメーション実装では「prefers-reduced-motion対応」がアクセシビリティ要件として定着。動きを抑える分岐を入れておくと品質評価で減点されない
+
+### 2026-06-23
+- **効率化：新規 LP 起動を `pnpm create lp-template <client>` 自社 CLI 1 コマンドで初期構築する**：Next.js 15＋Tailwind v4＋shadcn＋Biome＋Husky＋Playwright＋Lighthouse CI の一括セットアップを定型化し、毎案件の create-next-app→各種設定→lint 統合の手作業を撤廃すると実装着手までの摩擦がゼロになる
+- **効率化：Hana JSON→`tailwind.config`/`next/font`/配色注入を `pnpm sync:tokens` 1 コマンド化し STEP 1 を 45 分→90 秒に**：`tokens.json` を Single Source of Truth にして手動転記を廃止すると、Hana 仕様変更時の転記ミス起因の色ズレ Mia 差し戻しがゼロになる
+- **効率化：フォームは「Zod＋React Hook Form＋Server Action＋`after()`＋`useFormStatus`」テンプレで実装する**：INP 200ms 切り＋a11y 6 属性＋二重送信防止＋非同期処理のレスポンス外逃がしを 1 テンプレに標準装備すると、毎回の組合せ実装を撤廃でき「送信後の体感遅延」NG を企画段階で予防できる
+- **効率化：UI 骨格は `npx shadcn add button card dialog sheet form sonner skeleton` の 7 個一括＋社内 registry でテーマ適用する**：Button/Card/Dialog の手書き実装を撤廃し Sota デザイン提案との一貫性も CLI 層で担保すると、骨格実装を 2 時間→15 分に圧縮できる
+- **効率化：`pnpm dev:fresh`（`.next/cache` クリア＋Turbopack）を husky `post-checkout` で自動実行し HMR 不発を物理ゼロに**：ブランチ切替時の「保存しても反映されない→再起動 3 秒待ち」を自動キャッシュクリアで根絶すると、1 日 200 回 HMR の合計待機を 460 秒→45 秒に削れる

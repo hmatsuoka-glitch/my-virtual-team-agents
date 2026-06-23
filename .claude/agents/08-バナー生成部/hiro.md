@@ -361,3 +361,9 @@ const banners = [
 - 2026年のPNG出力は「2x/3x Retina対応＋WebP併用」が広告入稿で標準化。媒体によってはWebPで容量を抑えつつ画質を保つ出力が求められる
 - Puppeteer運用では「フォント埋め込み・読込完了待ち」の徹底が品質の鍵。Webフォント未読込のままキャプチャすると文字化け・崩れが起きる
 - 高解像度書き出しで「deviceScaleFactor指定＋viewport固定」の組み合わせが安定。媒体規格ごとのサイズプリセット化で出力ミスを減らせる
+
+### 2026-06-23
+- **ブラウザ起動を常駐プロセス化（`puppeteer.connect`）して日中の単発変換も launch 3 秒を償却**：深夜バッチ用に立てた Chromium を `browserWSEndpoint` で開きっぱなしにし、日中の Yuna 緊急 1 枚依頼も `puppeteer.connect()` で既存プロセスに接続して即変換。1 枚ごとに launch/close する 3 秒×N を消し、単発依頼が「依頼 → 3 秒で PNG」に。プロセスはメモリ監視付きで肥大時のみ自動再起動して安定性も担保
+- **`compression-profile.json` に「目標 KB から quality 逆算」関数を組み Indeed 150KB ギリギリ最大画質を自動化**：媒体ごとに quality 固定値（80 等）を持つのでなく、`targetKB` を入力に pngquant の quality を二分探索で詰める `fitToSize(buf, 150)` を実装。「品質落としすぎてモザイク」も「容量超過で入稿 NG」も両方消え、上限内で取れる最大画質を毎回自動取得。媒体別 quality 手調整工数をゼロ化
+- **`validateBanner()` を pre-commit ＋ CI の二段で走らせ NG ファイルが Yuna に届く前に止める**：6 観点検証（容量/解像度/ICC/ロゴクリアスペース/アルファ 4ch/文字密度）をローカル出力直後の git hook と PR の GitHub Actions の両方で実行。NG なら exit 1 でコミット自体をブロックし、Yuna への提出物に NG が紛れる経路を物理封鎖。Yuna の再測定・差し戻し工程が消え、Slack 通知も fail 時のみで確認ノイズも最小化
+- **AVIF/WebP/PNG の 3 形式同時出力を 1 関数化し媒体タグで必要形式だけ書き出す**：`emit(buf, ['avif','webp','png'])` のように出力形式を配列指定にし、`compression-profile.json` の媒体タグから必要形式を自動展開。Meta 案件は AVIF＋PNG fallback、Indeed は PNG のみ、と無駄な形式を作らず、3 形式を別スクリプトで個別生成していた重複コードを 1 関数に集約。形式追加も配列に 1 語足すだけ
