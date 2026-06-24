@@ -576,3 +576,10 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **効率化：フォームは「Zod＋React Hook Form＋Server Action＋`after()`＋`useFormStatus`」テンプレで実装する**：INP 200ms 切り＋a11y 6 属性＋二重送信防止＋非同期処理のレスポンス外逃がしを 1 テンプレに標準装備すると、毎回の組合せ実装を撤廃でき「送信後の体感遅延」NG を企画段階で予防できる
 - **効率化：UI 骨格は `npx shadcn add button card dialog sheet form sonner skeleton` の 7 個一括＋社内 registry でテーマ適用する**：Button/Card/Dialog の手書き実装を撤廃し Sota デザイン提案との一貫性も CLI 層で担保すると、骨格実装を 2 時間→15 分に圧縮できる
 - **効率化：`pnpm dev:fresh`（`.next/cache` クリア＋Turbopack）を husky `post-checkout` で自動実行し HMR 不発を物理ゼロに**：ブランチ切替時の「保存しても反映されない→再起動 3 秒待ち」を自動キャッシュクリアで根絶すると、1 日 200 回 HMR の合計待機を 460 秒→45 秒に削れる
+
+### 2026-06-24
+- **失敗: Hero に `Date.now()`/`Math.random()` を直書きし SC で実行、SSR と CSR の出力差で `Hydration failed`→本番 White Screen** → 回避策: クライアント値に依存する描画は `'use client'` 内かつ `useEffect`/`useState` で初期値を後付けし、SSR 時は確定値（プレースホルダ）を返す。`suppressHydrationWarning` の乱用で誤魔化さず、ビルド後に `Hydration` 警告ゼロを `page.on('console')` で確認する
+- **失敗: `100vh` で Hero を組み iOS Safari のアドレスバー分はみ出して CTA が画面外、SP の CV が落ちる** → 回避策: フルスクリーン高さは `100dvh`（フォールバックで `100svh`/`@supports` 分岐）を標準採用し、`100vh` 直書きを Biome の禁止ルールで検知。モバイルのビューポート可変を前提に高さ指定を統一する
+- **失敗: フォーム送信を `onClick`+fetch で実装し、JS 読込前/失敗時に送信不可＋連打で二重応募** → 回避策: `<form action={serverAction}>`+`useFormStatus` のプログレッシブエンハンスメント標準形にし、pending 中はボタン `disabled`＋ラベル『送信中...』、サーバー側は冪等キーで重複排除。CV 直前の最重要処理を多層防御でガードする
+- **失敗: スクロールアニメの初期 `opacity:0` を CSS だけで付与し、JS エラーで observer が回らず要素が永久非表示** → 回避策: 初期 hidden は JS 起動後に付与する方式（`.js-ready` クラス起点 or Framer Motion の `whileInView`）にし、JS 失敗時はコンテンツが見える状態をデフォルトにする。さらに `prefers-reduced-motion: reduce` で動きを止める分岐も同時実装する
+- **失敗: 全コンポーネントに念のため `'use client'` を付与し、バンドル肥大で TTI/INP が悪化** → 回避策: `'use client'` は `useState`/`useEffect`/イベントハンドラを使う末端コンポーネントだけに絞り、ページ・セクションは SC のまま保つ。`@next/bundle-analyzer` でクライアント JS 量を計測し、境界が広すぎないかをビルドごとに確認する

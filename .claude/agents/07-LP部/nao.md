@@ -549,3 +549,10 @@ export const HERO = {
 - **効率化：状態遷移（idle/hover/focus/disabled/loading/error）を YAML 1 ファイル→`mermaid-cli` で SVG 自動出力し質問ラリーを潰す**：「ローディングどう見せる？」の Ren/Mia 質問を設計図で先回り回答すると、実装時の判断迷いラリーが 5 往復→1 往復に減る
 - **効率化：Hana JSON→`tokens.json`（W3C 標準）→`style-dictionary build` で Tailwind/iOS/Android を 1 コマンド同期**：色変更時に 3 ファイルを手動修正する手間をゼロにでき、Sota との Next.js＋ネイティブ並行案件で運用工数を大幅削減できる
 - **効率化：Mia の95項目を STEP 6 納品前に「○/△/×」自己採点し QA を△/×に集中させる**：レイアウト/カラー/フォント/アニメ/レスポンシブ＋Hydration/OG/a11y を設計側で先回り採点して設計書に明記すると、Mia が○項目を流し見でき QA が高速化、Mia 差し戻しを設計層で予防して通過率を底上げできる
+
+### 2026-06-24
+- **失敗: Hero に日時・乱数・`localStorage` 参照を含む設計をして Ren が SC で実装し Hydration mismatch で本番 White Screen** → 回避策: STEP 5 でクライアント値（`Date.now()`/`Math.random()`/`window`/`localStorage`）に依存する要素を洗い出し、設計書に「この要素は CC 限定＋`useEffect` 内参照」と明記。Server/Client 境界の判定を Ren に委ねず設計層で確定し、SSR と CSR の出力差を構造的に封じる
+- **失敗: フォームを controlled 全フィールド設計にして Ren が全項目 `useState` 管理→入力ごと再レンダリングで INP 悪化** → 回避策: Form 仕様に各フィールドの controlled/uncontrolled 区分を明記し、Server Action+FormData 前提のフィールドは uncontrolled（`defaultValue`）、文字数カウント等が要る箇所のみ controlled と指定。不要な状態管理による入力遅延を設計段階で排除する
+- **失敗: セクション間余白を各コンポーネントに個別ハードコード指定し、クライアントの『全体的に詰まってる』指摘で全箇所を手修正** → 回避策: セクション間余白・最大幅・ヘッダー高さを `--section-gap`/`--container`/`--header-h` の CSS 変数（design token）で一元定義と設計書に明記。同値の重複ハードコードを禁止し、1箇所変更で全追従する構造で余白系の手戻りを根絶する
+- **失敗: loading/error は設計したが「実績0件・社員の声未提供」の空データ時挙動が未定義で、空見出しだけ表示され未完成感 NG** → 回避策: STEP 3 props 定義時に各動的セクションへ「データ0件時：非表示／プレースホルダ／固定文言フォールバック」の3択を必須明記。constants 未充足のまま公開される事故を、empty state を設計に含めることで封じる
+- **失敗: ナビ `href="#about"` と Section の `id` の対応表を作らず、Ren 実装で id がズレてアンカー無反応＋fixed ヘッダーに見出しが隠れる** → 回避策: STEP 1 セクション洗い出し時にナビ項目と id の1対1対応表＋各セクションの `scroll-margin-top`（ヘッダー高さ分）指定値を設計書に必須記載し、アンカー不発と見出し隠れを設計段階で同時防止する
