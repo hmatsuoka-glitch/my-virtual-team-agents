@@ -583,3 +583,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **失敗: フォーム送信を `onClick`+fetch で実装し、JS 読込前/失敗時に送信不可＋連打で二重応募** → 回避策: `<form action={serverAction}>`+`useFormStatus` のプログレッシブエンハンスメント標準形にし、pending 中はボタン `disabled`＋ラベル『送信中...』、サーバー側は冪等キーで重複排除。CV 直前の最重要処理を多層防御でガードする
 - **失敗: スクロールアニメの初期 `opacity:0` を CSS だけで付与し、JS エラーで observer が回らず要素が永久非表示** → 回避策: 初期 hidden は JS 起動後に付与する方式（`.js-ready` クラス起点 or Framer Motion の `whileInView`）にし、JS 失敗時はコンテンツが見える状態をデフォルトにする。さらに `prefers-reduced-motion: reduce` で動きを止める分岐も同時実装する
 - **失敗: 全コンポーネントに念のため `'use client'` を付与し、バンドル肥大で TTI/INP が悪化** → 回避策: `'use client'` は `useState`/`useEffect`/イベントハンドラを使う末端コンポーネントだけに絞り、ページ・セクションは SC のまま保つ。`@next/bundle-analyzer` でクライアント JS 量を計測し、境界が広すぎないかをビルドごとに確認する
+
+### 2026-06-26
+- **品質チェックポイント①モーダル/ハンバーガーメニューの「フォーカストラップ＋復帰」実装確認**：オーバーレイ展開中に Tab フォーカスが背後の本文に抜けると、SR/キーボード利用者が迷子になる。`inert` 属性 or focus-trap で開いている間は内部にフォーカスを閉じ込め、`Esc` で閉じる＋閉じた後は起動した要素にフォーカスを戻す実装を標準化。Mia のキーボード QA 一発通過と WCAG 2.4.3 適合を実装層で担保する
+- **品質チェックポイント②ページ冒頭「スキップリンク」と `<html lang>` の必須実装**：「本文へスキップ」リンク（フォーカス時のみ表示）が無いと、毎回ヘッダーナビを Tab で読み飛ばす負担が出る。`<a href="#main">本文へ` を最上部に置き、`<html lang="ja">` を必ず設定して SR の読み上げ言語を確定。複製でデフォルトの `lang="en"` 残存や lang 未指定だと日本語が英語発音で読まれる事故を防ぐ
+- **品質チェックポイント③`next/image` の `sizes` 実測一致と `fetchPriority` の使い分け確認**：`sizes` が実際の表示幅とズレると、SP に PC 用の巨大画像が配信され通信量・LCP が悪化する。DevTools の Network で実配信解像度が表示サイズに見合うかを計測し、Hero のみ `priority`＋`fetchPriority="high"`、それ以外は `loading="lazy"` を付与。「最適化したつもり」で過大画像が出る事故を実装時に潰す
+- **品質チェックポイント④ビルド成果物の「ソースマップ非公開＋外部スクリプト遅延」確認**：本番に `.map` が公開されると内部実装が読まれ、GA4・チャット等の外部 `<script>` を同期読込すると初期表示をブロックする。`productionBrowserSourceMaps: false` を確認し、計測系タグは `next/script` の `strategy="afterInteractive"`／`lazyOnload` で読み込む。納品前に本番ビルドで `.map` 非露出と外部タグの読込タイミングを検証する

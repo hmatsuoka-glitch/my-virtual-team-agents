@@ -457,3 +457,9 @@ STEP 6: 実装完了報告
 - **よくある失敗：`middleware.ts` の `matcher` を緩く書き（`/:path*` など）、`_next/static`・画像・API まで Edge Middleware を通過させて全リクエストに数十 ms 上乗せ＋ Edge 実行課金が膨張**。回避策は `matcher` で静的アセット・`_next`・favicon を除外する negative lookahead（`'/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)'`）を必須テンプレ化し、Middleware では「認証チェック・リダイレクトなど真に全経路で要る処理だけ」に限定。重い判定は Route Handler 側へ逃がす。
 - **よくある失敗：`Promise.all` で外部 API を 10 並列で叩く実装をそのままデプロイし、相手 API のレート制限（429）を踏んでリトライ嵐→自分の Function も timeout 連鎖**。回避策は `p-limit` で同時実行数を相手の rate limit に合わせて絞る（例 concurrency 3）＋ 429 受信時は `Retry-After` ヘッダー尊重の exponential backoff。長時間・大量処理は Vercel Function 直叩きをやめ Inngest/QStash の Job Queue へ退避し、`maxDuration` 内に収める設計に差し戻す。
 - **よくある失敗：Vercel の Deployment Protection（Vercel Authentication）を本番ドメインに付けたまま公開し、クライアントや検索クローラが「Vercel ログイン画面」に弾かれる／逆に preview を保護せず未公開機能が URL 流出で外部に見える**。回避策は「本番＝保護 OFF（独自認証で守る）、preview/staging＝保護 ON（Password or SSO）」を Terraform で環境別に固定し、デプロイ後に本番 URL へ未認証 `curl` して 200 が返るか、preview へ未認証 `curl` して 401 が返るかを CI で実測検証。
+
+### 2026-06-26
+- **品質チェックポイント①「ロールバックの実演」をデプロイ前ゲートに入れる**：ロールバック手順がドキュメントに「ある」だけでは品質保証にならない。本番昇格前に staging で `vercel rollback $(最新 stable-* タグ)` を実際に 1 回叩いて 30 秒以内に前版へ戻ることを実測し、DB マイグレーションの逆行 SQL も併せて dry-run する。「戻せる確証」を取ってから前進する。
+- **品質チェックポイント②監視の「沈黙＝正常」を疑い、合成監視（Synthetic Monitoring）で能動確認**：エラーが来ないのは「障害がない」のか「監視が壊れて通知が来ない」のか区別できない。本番の主要導線（ログイン→検索→応募）を 5 分間隔で外形監視 bot に叩かせ、想定レスポンスが返るかを能動チェック。監視自体の死活も監視対象に含める。
+- **品質チェックポイント③本番昇格チェックリストの「人手判断項目」を機械検証へ移す**：「環境変数を目視確認した」等の人手チェックは疲労時に形骸化する。`vercel env ls | diff .env.example`・未認証 `curl` での保護設定検証・`maxDuration` vs 想定処理時間の突合を CI ジョブ化し、PASS しない限り本番デプロイジョブが起動しない物理ゲートにする。
+- **品質チェックポイント④デプロイ後 24 時間の「課金・関数実行回数の前週比」を品質指標に含める**：機能テストが全 PASS でも、ISR revalidate ミスや Middleware の matcher 緩和で従量課金が静かに爆発する事故は検知できない。Spend Management の 50%/80% 通知と、デプロイ翌日の Function 実行回数・データ転送量の前週比チェックを「リリース完了の締め条件」にする。
