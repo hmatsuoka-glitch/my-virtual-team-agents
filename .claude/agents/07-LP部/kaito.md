@@ -357,3 +357,10 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **品質チェックポイント②「フォント読み込み戦略（font-display）」の知覚 QA を必須化**：複製でフォント指定は合っていても `font-display: swap` 未設定だと FOIT（描画ブロック）で初見が真っ白になり、逆に swap だと FOUT でガタつく。STEP 4 後に「webfont のプリロード＋fallback メトリクス調整（`size-adjust`）」が入っているかを確認し、Hero テキストの初見ガタつきゼロを知覚合格ラインに組込む
 - **品質チェックポイント③「印刷・PDF 化時のレイアウト崩れ」を納品前1回確認**：BtoB・公共系 LP はクライアントが Ctrl+P で印刷・PDF 保存して社内回覧するため、`@media print` 未定義だと背景色消失・CTA 黒塗り・改ページ分断が起きる。複製案件でも `print` プレビューを1回確認し、最低限「背景の color-adjust」と「改ページ回避」を入れる関門をデプロイ前に設置
 - **品質チェックポイント④「多言語・全角半角混在時の禁則処理」を SP 実機で確認**：日本語 LP で見出しが行末に句読点ぶら下がり・英単語の途中改行・全角約物の不自然な折り返しが起きると安っぽく見える。SP 実機（iPhone/Android）で見出し・キャッチコピーに `line-break: strict` ＋ `word-break: auto-phrase` 等の禁則が効いているかをデプロイ前に目視し、文字組みの粗さによる知覚 NG を排除
+
+### 2026-07-01
+- **失敗パターン: Vercel の環境変数を Preview だけに設定し Production 未登録で、本番だけフォーム送信・API が 500** → 回避策: デプロイ前に `vercel env ls production` で必要キー件数を声出し確認し、Preview で通っても Production の env が同数揃うまでデプロイをブロック（理由: env は環境ごと独立で Preview 成功は Production を保証しない）。実例: reCAPTCHA secret が production 未設定で送信全失敗
+- **失敗パターン: 修正リリース後も ISR/CDN キャッシュで差し替え画像・文言が古いまま出て「直ってない」と言われる** → 回避策: `vercel --prod` 完了後に該当パスを `revalidatePath` or 再ビルドで purge し、`?cache_bust=` 付き強制リロードで最新配信を確認してからクライアントへ URL 共有（理由: CDN とブラウザの2層キャッシュで更新が即時に見えない）
+- **失敗パターン: OG 画像・robots・sitemap を「LP本体OK」で見落とし、SNS シェアで前案件画像が出る／検索に載らない** → 回避策: デプロイ前ゲートに `opengraph.xyz` の3SNSプレビュー・`/robots.txt` の `Disallow: /` 残存確認・`sitemap.xml` の 200 を追加（理由: これらは本体ビルド緑でも独立して壊れ公開後にしか気づかれない）。実例: 複製元の `Disallow: /` を引き継ぎ本番が全ページ noindex
+- **失敗パターン: SP 実機で `100vh` の Hero が iOS Safari のアドレスバー分切れ、初期ビューから CTA が画面外に落ちる** → 回避策: デプロイ後 iPhone 実機で Hero 内 CTA が初期ビューに収まるか確認し、`100vh` が `100dvh`（動的ビューポート）に置換済みかをゲート化（理由: iOS Safari の `100vh` はアドレスバー込み高さで実表示より縦に長く下端要素が隠れる）
+- **失敗パターン: `main` 直結の自動デプロイで、Mia QA 前の作業コミットが本番に反映される** → 回避策: 複製案件は `feature/*` で作業して Preview のみ発行し、`vercel alias set` での本番昇格を STEP 5 の手動ゲートに残す（理由: push 即本番だと QA を挟めず未検証版がクライアントに見える）。実例: 中間コミットの placeholder 画像が公開URLに一時露出
