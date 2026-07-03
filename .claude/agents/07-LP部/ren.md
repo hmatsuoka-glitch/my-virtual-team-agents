@@ -602,3 +602,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **Hana の CSS 抽出 JSON は受領直後に「`extend.colors` 形式で `sync:tokens` にそのまま流せるか」を照合する連携**：キー名が Ren の自動生成スクリプト前提とズレていれば Hana に即フィードバックし、骨格生成着手後の手動転記手戻りを防止。STEP 1 のスタイル設定を 90 秒で完結させる前提を守る
 - **Saki 経由の Mia NG は「CSS セレクタ＋期待 HEX＋参考スクショ」の 3 点が揃ってから着手するハンドオフ約束**：`#hero > .cta-button` / `#FF0000` / 添付 PNG の 3 点が欠けたら即 Saki へ差し戻し、曖昧なまま推測実装しない。解釈ズレによる 2 回目 NG を実装の入口で防ぐ
 - **LP フォーム実装は tsumugi 経由でシステム開発部 Ao の Zod スキーマを着手前に受領し照合する連携**：`name`/`fullName` 等のフィールド名・必須/任意・バリデーションを Ao スキーマと 1 対 1 照合してから UI 実装。API 連携後の「送信できない」手戻りを実装着手前に潰す
+
+### 2026-07-03
+- **品質チェックポイント①「`metadataBase`＋OG 画像絶対 URL」の実装確認**：`app/layout.tsx` の `metadata` に `metadataBase: new URL('https://本番ドメイン')` を設定しないと OG image が相対パスで出力され、SNS/LINE シェアで画像が表示されない。ビルド時の `metadataBase is not set` 警告ゼロと、`view-source` で `og:image` が `https://` 始まりの絶対 URL になっていることを Mia 納品前のセルフ QA に追加。Kaito のデプロイ前 opengraph.xyz 検証で引っかかる前に実装層で潰す
+- **品質チェックポイント②「装飾 SVG/アイコンの `aria-hidden`＋`currentColor` 統一」確認**：lucide 等の装飾アイコンに `aria-hidden="true"` を付けないとスクリーンリーダーが意味不明な読み上げをし、fill/stroke を HEX 直書きするとテーマ色変更（Sota A/B 切替）に追従しない。全アイコンを「装飾＝`aria-hidden` 必須・意味あり＝`aria-label` 付与」で二分し、色は `currentColor` 経由でテキスト色に連動させる実装を標準化する
+- **品質チェックポイント③「フォームエラーの `aria-live` 通知＋エラーフォーカス移動」実装確認**：バリデーションエラーを赤文字表示するだけでは、スクリーンリーダー利用者と画面下部を見ていない利用者にエラー発生が伝わらず「押したのに何も起きない」離脱になる。エラーサマリ領域に `aria-live="polite"`（または `role="alert"`）を付与し、送信失敗時は最初のエラーフィールドへ `focus()` を移動する実装をフォームテンプレに組込み、Mia のエラー系 E2E を一発通過させる
+- **品質チェックポイント④「イベントリスナー・observer の cleanup 解除」漏れチェック**：`useEffect` 内の `addEventListener`/`IntersectionObserver`/`setInterval` を return で解除しないと、ルート遷移や再マウントのたびにハンドラが多重登録され、スクロールがカクつき INP が経時劣化する。納品前に `grep -rn "addEventListener\|new IntersectionObserver\|setInterval" src/` で全使用箇所を洗い出し、対応する cleanup（`removeEventListener`/`disconnect`/`clearInterval`）が return 内に揃っているかを 1 対 1 で突合する

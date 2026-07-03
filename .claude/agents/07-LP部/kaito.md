@@ -370,3 +370,9 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **STEP 完了通知に次工程担当の @メンションを機械的に付けて「お見合いボトルネック」を潰す連携**：Hana完了→@Nao @Ren、Nao完了→@Ren、Ren完了→@Mia、Mia通過→@Kaito と次担当をタグ付けする。誰が次に動くか曖昧で待機が生じる事態を物理排除し、Hana抽出の完成度スコア80点以上なら Ren は Nao 設計書を待たず骨格生成に入れる非同期ハンドオフを回す。
 - **Mia 通過直後、バナー生成部へ「デプロイURL＋Heroスクショ＋カラーJSON」3点を自動連携する動線を作る**：デプロイ完了時に `playwright screenshot` と Hana の `tokens.json` の Hero カラー抜粋を `#banner-creation` に投稿する。バナー部が LP と完全一致のブランドで SNS/広告クリエイティブを即制作でき、ブランドズレ起因の作り直しをゼロにする。
 - **外部システム連動（フォーム送信/CMS/認証）を含む案件は Hana STEP 7 完了時点で Sota へ「連携先/API有無/認証方式/実装方式」を先出しする連携**：Ren が実装フェーズで詰まる前に Sota の判断を取得する。5項目テンプレで Slack DM し、STEP 3 実装後に「API連携不可」と判明する手戻りを着手前に潰す。
+
+### 2026-07-03
+- **品質チェックポイント①「混在コンテンツ（http:// 資産）残存ゼロ」をデプロイゲート化**：複製元 LP から `http://` の画像・スクリプト・iframe 参照を引き継ぐと、本番 https 配信でブラウザにブロックされ画像欠落・機能停止が起きる。STEP 5 で `grep -rn "http://" src/ public/` の検出ゼロ＋DevTools Console の Mixed Content 警告ゼロを必須ゲートにし、https 化漏れの資産を本番前に物理検出する
+- **品質チェックポイント②「計測タグの本番 ID・環境分離」確認**：GA4/GTM/広告ピクセルが複製元の測定 ID のままだと計測データが他社プロパティに流れ、逆に Preview URL で本番 ID が発火すると社内確認アクセスで CV データが汚染される。デプロイ前に「測定 ID がクライアント発行の本番 ID か」「Preview/localhost では発火しない条件分岐があるか」を GA4 DebugView で確認し、納品後の『数字がおかしい』クレームを入口で断つ
+- **品質チェックポイント③「セキュリティヘッダ 4 点」を curl で本番確認**：`Strict-Transport-Security`・`X-Content-Type-Options: nosniff`・`Referrer-Policy`・`X-Frame-Options`（または CSP frame-ancestors）の 4 ヘッダを `curl -sI https://本番URL` で検証。未設定は `vercel.json` の `headers` セクションで付与してからデプロイし、クライアントのセキュリティ診断や Lighthouse Best Practices での指摘を先回りで排除する
+- **品質チェックポイント④「依存パッケージ既知脆弱性」を納品ゲートに追加**：`pnpm audit --prod` で High/Critical が 1 件でもあれば納品ブロックし、パッチ版への更新（lockfile 更新＋再ビルド＋Mia 再スモーク）を先に完了させる。ビルド緑・ビジュアル QA 通過でも脆弱性入り依存のまま納品すると、後日クライアント側スキャンで発覚して信頼を失うため、部長判定の関門として脆弱性ゼロを品質基準に含める
