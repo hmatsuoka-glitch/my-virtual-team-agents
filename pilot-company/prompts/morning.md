@@ -21,7 +21,7 @@
    - 合格 → backlog に `[承認待ち] <ファイルパス> <公開先>` として登録
    - 不合格 → 修正指示を backlog に書き、可能なら同セッション内で1回だけ再委任
 
-5. **終了処理**: `git add pilot-company && git commit -m "morning: <今日やったことの要約>" && git push origin main` を実行
+5. **終了処理**: `git add pilot-company && git commit -m "morning: <今日やったことの要約>" && git pull --rebase && git push` を実行（push先は現在のブランチ）
 
 ## 厳守事項
 

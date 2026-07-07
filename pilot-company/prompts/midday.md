@@ -13,7 +13,7 @@
 4. **市場学習（15分ぶんの調査）**: WebSearch で「建設業 採用」関連の当日性のあるトピック（ニュース・トレンド・競合商品の動き）を1つ調べ、
    要点と自社への示唆を memory/learnings.md に追記する
 
-5. **終了処理**: `git add pilot-company && git commit -m "midday: <要約>" && git push origin main`
+5. **終了処理**: `git add pilot-company && git commit -m "midday: <要約>" && git pull --rebase && git push`（push先は現在のブランチ）
 
 ## 厳守事項
 

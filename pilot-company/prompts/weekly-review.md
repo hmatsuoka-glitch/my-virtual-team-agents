@@ -20,7 +20,7 @@
 
 4. **来週のタスク生成**: 改善施策 TOP3 を具体的なタスクに分解し、tasks/backlog.md に担当付きで追加する
 
-5. **終了処理**: `git add pilot-company && git commit -m "weekly-review: YYYY-Wnn" && git push origin main`
+5. **終了処理**: `git add pilot-company && git commit -m "weekly-review: YYYY-Wnn" && git pull --rebase && git push`（push先は現在のブランチ）
 
 ## 厳守事項
 

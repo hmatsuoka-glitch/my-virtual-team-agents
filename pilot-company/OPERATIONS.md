@@ -17,6 +17,11 @@
 
 ## スケジューラ設定
 
+> **採用構成（2026-07-07 決定）: ハイブリッド運用**
+> - ローカルlaunchd: エージェント定義の同期・auto-commit（従来通り、変更なし）
+> - クラウドRoutines: パイロット事業部の定時セッション4本（方法B。登録済み）
+> 両者は同じリポジトリにpushするため、各セッションは commit 前に `git pull --rebase` を行う。
+
 ### 方法A: ローカルMac（launchd）— 既存の auto-commit 運用の延長
 
 `~/Library/LaunchAgents/com.let.ai-company.morning.plist` の例:

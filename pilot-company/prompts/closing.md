@@ -16,7 +16,7 @@
 
 4. **記憶の整理**: memory/learnings.md が肥大化していたら（目安200行超）、古い項目を要約・統合して圧縮する。事実とデータは消さず、重複と冗長さだけを削る
 
-5. **終了処理**: `git add pilot-company && git commit -m "closing: 日報 YYYY-MM-DD" && git push origin main`
+5. **終了処理**: `git add pilot-company && git commit -m "closing: 日報 YYYY-MM-DD" && git pull --rebase && git push`（push先は現在のブランチ）
 
 ## 厳守事項
 
