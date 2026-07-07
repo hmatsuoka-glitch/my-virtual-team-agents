@@ -608,3 +608,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **品質チェックポイント②「装飾 SVG/アイコンの `aria-hidden`＋`currentColor` 統一」確認**：lucide 等の装飾アイコンに `aria-hidden="true"` を付けないとスクリーンリーダーが意味不明な読み上げをし、fill/stroke を HEX 直書きするとテーマ色変更（Sota A/B 切替）に追従しない。全アイコンを「装飾＝`aria-hidden` 必須・意味あり＝`aria-label` 付与」で二分し、色は `currentColor` 経由でテキスト色に連動させる実装を標準化する
 - **品質チェックポイント③「フォームエラーの `aria-live` 通知＋エラーフォーカス移動」実装確認**：バリデーションエラーを赤文字表示するだけでは、スクリーンリーダー利用者と画面下部を見ていない利用者にエラー発生が伝わらず「押したのに何も起きない」離脱になる。エラーサマリ領域に `aria-live="polite"`（または `role="alert"`）を付与し、送信失敗時は最初のエラーフィールドへ `focus()` を移動する実装をフォームテンプレに組込み、Mia のエラー系 E2E を一発通過させる
 - **品質チェックポイント④「イベントリスナー・observer の cleanup 解除」漏れチェック**：`useEffect` 内の `addEventListener`/`IntersectionObserver`/`setInterval` を return で解除しないと、ルート遷移や再マウントのたびにハンドラが多重登録され、スクロールがカクつき INP が経時劣化する。納品前に `grep -rn "addEventListener\|new IntersectionObserver\|setInterval" src/` で全使用箇所を洗い出し、対応する cleanup（`removeEventListener`/`disconnect`/`clearInterval`）が return 内に揃っているかを 1 対 1 で突合する
+
+### 2026-07-07
+- **効率化：新規 LP 起動を `pnpm create lp-template <client>` 自社 CLI に集約し初期構築を 2 時間→30 秒に**：Next.js 15＋Tailwind v4＋shadcn＋Biome＋Husky＋Playwright＋Lighthouse CI の一括セットアップを定型化し、毎案件の create-next-app→lint 統合→フック設定の手作業を撤廃。着手までの摩擦をゼロにする
+- **効率化：Hana JSON→`tailwind.config`/`next/font`/配色注入を `pnpm sync:tokens` 1 コマンド化し STEP 1 を 45 分→90 秒に**：`tokens.json` を Single Source of Truth にして手動転記を廃止すると、Hana 仕様変更時の転記ミス起因の色ズレ Mia 差し戻しがゼロになる。色は `extend.colors` 経由に固定し任意値 `[#hex]` 直書きを ESLint で禁止して token 逸脱も同時に防ぐ
+- **効率化：フォームは「Zod＋React Hook Form（非制御）＋Server Action＋`after()`＋`useFormStatus`」テンプレで実装し 90 分→18 分に**：INP 200ms 切り（重い非同期はレスポンス外へ）＋a11y 6 属性＋`name`/`autocomplete` 自動入力＋二重送信防止（冪等キー＋pending disabled）を 1 テンプレに標準装備し、毎回の組合せ実装と「送信後の体感遅延」NG を撲滅する
+- **効率化：Mia 差し戻しを `@ren @saki` 同時メンションで並列受信し、Saki 整理中に該当ファイル特定＋影響範囲調査を先回りする**：Saki 指示書の到着を待たず着手準備を並列化し、修正 1 サイクルを 4 時間→1.5 時間に圧縮。不明点は「質問内容/該当ファイル行番号/想定回答3択」テンプレで 5 分以内に返し、要件不明での停止を上流で潰す

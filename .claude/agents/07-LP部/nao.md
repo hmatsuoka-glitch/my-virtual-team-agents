@@ -581,3 +581,9 @@ export const HERO = {
 - **品質チェックポイント②「ブレークポイント別 表示/非表示マトリクス」の確定**：「この画像は PC のみ・この電話 CTA は SP のみ」の判断を実装時の Ren に委ねると、`hidden md:block` の付け忘れで SP に PC 用要素が混ざる。STEP 1 のセクション洗い出し時に全コンポーネント×3 ブレークポイントの表示/非表示/差し替えをマトリクス表で明記し、両方に出す要素は DOM 二重化（SEO・a11y 上の重複読み上げ）を避ける方針まで指定する
 - **品質チェックポイント③「アニメーション仕様表」を数値で設計書に固定**：「ふわっと出る」等の形容詞のままだと Ren の実装が元 LP とズレて Mia の duration/easing 照合で NG になる。対象要素ごとに「トリガー（inView/hover/load）/duration(ms)/easing/delay/使用プロパティ」を表化し、使用プロパティは `transform`・`opacity` の 2 種に限定指定（`top/left/width` のアニメ禁止）。reduced-motion 時の代替挙動（静止/fade のみ）も同じ行に併記する
 - **品質チェックポイント④「UTM パラメータ引き継ぎ」導線設計の確認**：広告流入 LP で CTA が別ページのフォームへ遷移する構成だと、遷移時に UTM が落ちて広告経由 CV が計測不能になる。STEP 5 で「CTA リンクは同一ページ内アンカーか/別ページ遷移か」を確認し、遷移がある場合はクエリ引き継ぎ（またはセッション保持）の方式を設計書に明記。媒体別の費用対効果レポートが成立する状態を設計段階で担保する
+
+### 2026-07-07
+- **効率化：設計書を8セクション（ページ構成/コンポーネント定義/props型/constants例/データフロー図/Performance Budget/8観点表/Mia観点先回り）スケルトンから埋め、毎回のゼロ書きを撤廃**：`templates/lp-design-spec.md` をコピーして訴求軸と数値だけ差し替える運用にし、設計書作成を 90 分→25 分に圧縮。同一ソースを Mermaid Preview 拡張で PDF 化すれば Ren 用とクライアント提示用を 1 ファイルで兼ねられる
+- **効率化：Hana の `tokens.json` を `zod-to-ts` で `types/index.ts` へ、`style-dictionary build` で Tailwind/iOS/Android 設定へ 1 コマンド同期し手書き転記を廃止**：JSON Schema→Zod→TypeScript Interface のパイプで実行時バリデート可能な型を自動生成し Ren へビルド検証済みで渡す。色変更時の 3 ファイル手動修正もゼロになり、型タイポ起因の差し戻しと色ズレを設計層で同時に潰す
+- **効率化：コンポーネントの状態遷移（idle/hover/focus/disabled/loading/error）を YAML 1 ファイル→`mermaid-cli` で SVG 自動出力し実装時の質問ラリーを潰す**：「ローディングどう見せる？」「空データ0件は？」を設計図で先回り回答する運用にすると、Ren/Mia の判断迷い往復が 5 回→1 回に。empty state（0件/1件/n件の3分岐）も同じ図に含め、正常系だけ設計する漏れを図で強制する
+- **効率化：SA/IM/HO ラベルを `ast-grep` で `useState/useEffect/onClick` 検出から自動付与し Server/Client 境界を機械判定する**：手書きで境界を書くと漏れて Ren が全 CC 化しバンドルが膨らむため、状態・イベント・ブラウザ API の使用を静的解析して末端 CC・ページ SC を自動ラベリング。コンポーネント分割の判定を 60 分→15 分にし、`'use client'` 乱用起因の TTI/INP 悪化を設計層で排除する
