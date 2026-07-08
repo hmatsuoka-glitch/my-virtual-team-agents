@@ -74,4 +74,4 @@
 
 - launchd: `launchctl unload ~/Library/LaunchAgents/com.let.ai-company.*.plist`
 - Routines: セッションで「Routineを全部止めて」と指示
-- 全セッション共通ルール: **1セッションで publish 系の外部アクションは行わない**（承認キュー方式のため、暴走しても最悪「ドラフトが増える」だけで実害が出ない設計）
+- 全セッション共通ルール: publish 系の外部アクションは原則行わない。**唯一の例外はX投稿**（2026-07-07 HARU指示により自動化。必ず `scripts/post_to_x.py` 経由・日次上限2件・全件ログ記録。環境変数のAPIキーを削除すれば即座に承認待ち運用へ戻る）。note公開・販売開始・支出は引き続き人間承認が必須
