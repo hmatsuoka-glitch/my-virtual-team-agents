@@ -4,7 +4,7 @@
 
 1. **状況把握**: pilot-company/tasks/backlog.md と本日の commit ログ（`git log --oneline --since="today 00:00"`）を確認する
 
-2. **X成果データの取得**: 環境変数 X_API_KEY が設定されている場合、`python3 pilot-company/scripts/fetch_x_metrics.py` を実行して ledger/x_metrics.csv を最新化する。伸びている投稿・沈んでいる投稿の傾向に気づいたら memory/learnings.md に1行追記する（エラー時は日報に記録して続行）
+2. **X成果データの取得**: 環境変数 X_API_KEY が設定されている場合、`python3 pilot-company/scripts/fetch_x_metrics.py` を実行して ledger/x_metrics.csv を最新化する。未設定の場合はローカルボットが17:10に更新した ledger/x_metrics.csv をそのまま使う（ファイルが古い/無い場合は「未取得」と日報に正直に書く）。伸びている投稿・沈んでいる投稿の傾向に気づいたら memory/learnings.md に1行追記する（エラー時は日報に記録して続行）
 
 3. **帳簿チェック（finance として）**: pilot-company/ledger/ の各CSVを検査する
    - 形式崩れ・重複・日付順の乱れがあれば修正

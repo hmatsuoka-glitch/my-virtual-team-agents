@@ -6,7 +6,7 @@
 
 ## HARU 対応待ち（人間のアクションが必要）
 
-- [TODO] X自動投稿のAPIキー設定（developer.x.com で従量課金登録・$5チャージ・キー4種を環境変数へ。手順は HARU_MANUAL.md 参照） @HARU
+- [TODO] ローカルXボットのセットアップ（Playwright導入・Xログイン・launchd 3本登録。手順は browser/README.md・約15分。9〜18時はMacをスリープさせない設定も） @HARU
 
 - [完了] 販売プラットフォームの決定とアカウント準備 — note採用。アカウント作成・銀行口座登録済み（2026-07-07 HARU完了） @HARU
 - [完了] X（旧Twitter）発信用アカウントの用意 — 既存アカウントあり（2026-07-07 HARU確認） @HARU
@@ -22,6 +22,8 @@
 - [TODO] 商品P1の販売ページ文面（タイトル・訴求・価格） @kotone
 
 ## Phase 2 予定（Xループ安定後に着手）
+
+- [TODO] X APIへの移行: developer.x.com で従量課金登録・キー4種を環境変数へ → ローカルXボット退役（手順は HARU_MANUAL.md / browser/README.md） @HARU
 
 - [TODO] note完全自動投稿の実装（NOTE_AUTOMATION_PLAN.md 参照。Step 1: 下書き自動投入から） @システム
 - [TODO] note専用Chromeプロファイルの作成とログイン（Step 1 着手時・5分） @HARU
