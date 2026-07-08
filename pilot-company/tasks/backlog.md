@@ -20,6 +20,11 @@
 - [TODO] note立ち上げ設計: アカウント名候補3案・プロフィール文・ヘッダー訴求のドラフト（Xと同一ブランドで統一） @sho
 - [TODO] 商品P1の販売ページ文面（タイトル・訴求・価格） @kotone
 
+## Phase 2 予定（Xループ安定後に着手）
+
+- [TODO] note完全自動投稿の実装（NOTE_AUTOMATION_PLAN.md 参照。Step 1: 下書き自動投入から） @システム
+- [TODO] note専用Chromeプロファイルの作成とログイン（Step 1 着手時・5分） @HARU
+
 ## 承認待ち
 
 （なし）
