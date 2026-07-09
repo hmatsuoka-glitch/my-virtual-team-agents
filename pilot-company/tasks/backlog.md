@@ -18,7 +18,7 @@
 - [完了] 商品P1: 目次・構成案（products/P1_outline.md、2026-07-09 kotone）
 - [完了] note立ち上げ設計: 名前3案・プロフィール文（drafts/note_profile.md、2026-07-09 sho）
 - [TODO] 商品P1: テンプレート本体の執筆（価格承認と並行着手可） @kotone
-- [TODO] 商品P1の販売ページ文面（価格欄は承認後に記入） @kotone
+- [TODO] 商品P1の販売ページ文面（価格 ¥2,980 で作成。2026-07-09 HARU承認済み） @kotone
 
 ## 来週のタスク（W29・週次レビューW28で生成）
 
@@ -35,7 +35,7 @@
 
 ## 承認待ち
 
-- [承認待ち] P1価格 ¥2,980 の承認（根拠: products/P1_price_proposal.md・competitors.md）。OKで販売ページ作成へ／修正: 希望価格を一言 @HARU
+（なし）
 
 ## 完了
 
