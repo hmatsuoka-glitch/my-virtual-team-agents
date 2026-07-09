@@ -36,7 +36,9 @@ POST_LOG = PILOT / "logs" / "x_posts.csv"
 METRICS = PILOT / "ledger" / "x_metrics.csv"
 ERR_DIR = PILOT / "browser" / "logs"
 PROFILE = pathlib.Path.home() / ".x-bot-profile"
-CDP = os.environ.get("X_BOT_CDP", "").strip()  # 例: http://localhost:9222
+CDP = os.environ.get("X_BOT_CDP", "").strip()  # 例: http://127.0.0.1:9222
+# localhost はIPv6(::1)に解決され接続失敗することがあるためIPv4に正規化
+CDP = CDP.replace("localhost", "127.0.0.1")
 DAILY_CAP = 2
 
 
