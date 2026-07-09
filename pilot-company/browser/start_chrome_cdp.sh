@@ -8,12 +8,11 @@
 # 使い方:  zsh pilot-company/browser/start_chrome_cdp.sh
 # 初回のみ: 開いたChromeで x.com を開き、いつも通りXにログインする（以降は保持される）。
 
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PORT=9222
 DATADIR="$HOME/.x-bot-chrome"
 
-if [ ! -x "$CHROME" ]; then
-  echo "Google Chrome が見つかりません: $CHROME"
+if [ ! -d "/Applications/Google Chrome.app" ]; then
+  echo "Google Chrome が見つかりません: /Applications/Google Chrome.app"
   exit 1
 fi
 
@@ -23,9 +22,12 @@ if curl -s "http://127.0.0.1:$PORT/json/version" >/dev/null 2>&1; then
   exit 0
 fi
 
-"$CHROME" --remote-debugging-port=$PORT \
+# open -na で macOS の LaunchServices 経由の新規インスタンスとして起動する。
+# これによりターミナル終了時のHUPで巻き添え終了しない（バックグラウンド&だと死ぬ）。
+open -na "Google Chrome" --args \
+  --remote-debugging-port=$PORT \
   --user-data-dir="$DATADIR" \
-  --no-first-run --no-default-browser-check >/dev/null 2>&1 &
+  --no-first-run --no-default-browser-check
 
 # ポートが開くまで最大10秒待つ
 for i in {1..20}; do
