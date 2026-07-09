@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-"""X（旧Twitter）をログイン済みChromeプロファイルで直接操作するローカルボット。
+"""X（旧Twitter）をログイン済みChromeで直接操作するローカルボット。
 
-X API移行までの暫定運用（2026-07-08 HARU指示）。クラウドRoutinesではなく
-**ローカルMacで launchd から実行する**（セットアップは同フォルダの README.md 参照）。
+X API移行までの暫定運用（2026-07-08 HARU指示）。**ローカルMacで実行する**。
+
+2つの接続モード:
+  - CDPモード（推奨）: あなたが普段使っているChromeを --remote-debugging-port 付きで起動し、
+      そこへ後から接続する。ログイン作業が不要で、本物のブラウザなのでbot検出されにくい。
+      環境変数 X_BOT_CDP に接続先（例 http://localhost:9222）を設定すると有効になる。
+  - プロファイルモード（フォールバック）: 専用プロファイルを自動化ブラウザで開く。
+      ※Xはこの方式のログインを弾くことがある（bot検出）。CDPモードが使えない時のみ。
 
 サブコマンド:
-    login             初回のみ。ブラウザが開くので手動でXにログインし、ウィンドウを閉じる
-    post [--dry-run]  tasks/x_queue/ の最も古いドラフトを1本投稿する（--dry-run は入力まで行い投稿しない）
-    metrics           投稿済みポストの表示数・いいね等を取得し ledger/x_metrics.csv を更新する
+    login             プロファイルモード用の初回ログイン（CDPモードでは不要）
+    post [--dry-run]  tasks/x_queue/ の最も古いドラフトを1本投稿する
+    metrics           投稿済みポストの表示数等を取得し ledger/x_metrics.csv を更新する
 
-安全装置:
-    - 日次投稿上限2件（logs/x_posts.csv で API方式と共有カウント）
-    - 人間らしい入力速度（1文字30〜90ms）と起動時のランダム待機（0〜120秒）
-    - 失敗時: スクリーンショットを browser/logs/ に保存して終了。キューは消さない（次回再試行）
-
-必要: pip3 install playwright && python3 -m playwright install chromium
+安全装置: 日次上限2件 / 人間らしい入力速度 / 起動時ランダム待機 / 失敗時スクショ＋キュー保持
+必要: python3 -m venv ~/.x-bot-venv && ~/.x-bot-venv/bin/pip install playwright
+      && ~/.x-bot-venv/bin/python -m playwright install chromium
 """
 import csv
 import datetime
+import os
 import pathlib
 import random
 import re
@@ -32,6 +36,7 @@ POST_LOG = PILOT / "logs" / "x_posts.csv"
 METRICS = PILOT / "ledger" / "x_metrics.csv"
 ERR_DIR = PILOT / "browser" / "logs"
 PROFILE = pathlib.Path.home() / ".x-bot-profile"
+CDP = os.environ.get("X_BOT_CDP", "").strip()  # 例: http://localhost:9222
 DAILY_CAP = 2
 
 
@@ -47,12 +52,29 @@ def today_post_count():
         return sum(1 for row in csv.reader(f) if row and row[0].startswith(today))
 
 
-def launch(p, headless=False):
-    return p.chromium.launch_persistent_context(
-        str(PROFILE), headless=headless,
-        viewport={"width": 1280, "height": 900},
-        locale="ja-JP",
+def get_context(p):
+    """接続モードに応じて (context, cleanup関数) を返す。
+
+    CDPモード: 既存Chromeに接続し既存コンテキストを使う。cleanupはページを閉じるだけ
+              （ユーザーのChrome本体は閉じない）。
+    プロファイルモード: 専用プロファイルで永続コンテキストを開き、cleanupで閉じる。
+    """
+    if CDP:
+        browser = p.chromium.connect_over_cdp(CDP)
+        ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+        return ctx, (lambda: browser.close())
+    ctx = p.chromium.launch_persistent_context(
+        str(PROFILE), headless=False,
+        viewport={"width": 1280, "height": 900}, locale="ja-JP",
     )
+    return ctx, (lambda: ctx.close())
+
+
+def new_page(ctx):
+    # CDPモードで既存タブがあれば再利用、なければ新規
+    if CDP and ctx.pages:
+        return ctx.pages[0]
+    return ctx.new_page()
 
 
 def save_error(page, tag):
@@ -65,9 +87,13 @@ def save_error(page, tag):
 
 
 def cmd_login():
+    if CDP:
+        print("CDPモードではlogin不要です。普段のChromeでXにログイン済みであることを確認してください。")
+        return
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        ctx = launch(p, headless=False)
+        ctx = p.chromium.launch_persistent_context(
+            str(PROFILE), headless=False, locale="ja-JP")
         page = ctx.new_page()
         page.goto("https://x.com/login")
         print("ブラウザでXにログインしてください。完了したらこのターミナルで Enter を押してください。")
@@ -91,13 +117,12 @@ def cmd_post(dry_run=False):
     if not text or weighted_length(text) > 280:
         sys.exit(f"error: {draft.name} が空か文字数超過です。修正が必要（キューに残します）")
 
-    # 定時実行の機械的な規則性を崩す（人間らしさ）
     if not dry_run:
-        time.sleep(random.uniform(0, 120))
+        time.sleep(random.uniform(0, 120))  # 定時実行の規則性を崩す
 
     with sync_playwright() as p:
-        ctx = launch(p)
-        page = ctx.new_page()
+        ctx, cleanup = get_context(p)
+        page = new_page(ctx)
         try:
             page.goto("https://x.com/compose/post", wait_until="domcontentloaded")
             box = page.wait_for_selector('[data-testid="tweetTextarea_0"]', timeout=30000)
@@ -107,12 +132,11 @@ def cmd_post(dry_run=False):
             time.sleep(random.uniform(1.0, 3.0))
             if dry_run:
                 print("[dry-run] 入力まで確認しました。投稿はしていません")
-                save_error(page, "dryrun")  # 確認用スクリーンショット
-                ctx.close()
+                save_error(page, "dryrun")
+                cleanup()
                 return
             page.click('[data-testid="tweetButton"]')
 
-            # 投稿URLの取得: 成功トースト内のリンク → 失敗時は自分のプロフィール最新ポスト
             tweet_url = ""
             try:
                 a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=15000)
@@ -140,7 +164,7 @@ def cmd_post(dry_run=False):
             save_error(page, "post-fail")
             sys.exit(f"error: 投稿に失敗しました（キューに残します）: {e}")
         finally:
-            ctx.close()
+            cleanup()
 
 
 NUM = r"([\d,\.]+(?:万)?)"
@@ -178,8 +202,8 @@ def cmd_metrics():
     fetched_at = datetime.datetime.now().isoformat(timespec="seconds")
     results = []
     with sync_playwright() as p:
-        ctx = launch(p)
-        page = ctx.new_page()
+        ctx, cleanup = get_context(p)
+        page = new_page(ctx)
         for posted_at, tweet_id, *_ in targets:
             url = f"https://x.com/i/status/{tweet_id}"
             try:
@@ -196,7 +220,7 @@ def cmd_metrics():
             except Exception:
                 save_error(page, f"metrics-{tweet_id}")
                 continue
-        ctx.close()
+        cleanup()
 
     if not results:
         sys.exit("error: 成果データを1件も取得できませんでした（スクリーンショット参照）")
