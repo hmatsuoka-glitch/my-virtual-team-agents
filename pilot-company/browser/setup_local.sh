@@ -6,11 +6,16 @@ set -e
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 LA="$HOME/Library/LaunchAgents"
+VENV="$HOME/.x-bot-venv"
+PY="$VENV/bin/python"
 echo "==> リポジトリ: $REPO"
 
-echo "==> 1/3 Playwright をインストールしています..."
-pip3 install playwright
-python3 -m playwright install chromium
+echo "==> 1/3 専用のPython環境（venv）を作成して Playwright をインストールしています..."
+# macOSのHomebrew Pythonはシステム全体へのpipインストールを禁止しているため（PEP 668）、
+# ボット専用の仮想環境 ~/.x-bot-venv に隔離してインストールする
+python3 -m venv "$VENV"
+"$VENV/bin/pip" install --upgrade pip playwright
+"$PY" -m playwright install chromium
 
 echo "==> 2/3 launchd ジョブを3本登録しています..."
 mkdir -p "$LA"
@@ -28,7 +33,7 @@ write_plist() {
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd ${REPO} &amp;&amp; git pull --rebase &amp;&amp; python3 pilot-company/browser/x_browser_bot.py ${sub} &amp;&amp; git add pilot-company &amp;&amp; git commit -m "x-bot: ${sub}" &amp;&amp; git push || true</string>
+    <string>cd ${REPO} &amp;&amp; git pull --rebase &amp;&amp; ${PY} pilot-company/browser/x_browser_bot.py ${sub} &amp;&amp; git add pilot-company &amp;&amp; git commit -m "x-bot: ${sub}" &amp;&amp; git push || true</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>${hour}</integer><key>Minute</key><integer>${min}</integer></dict>
@@ -50,11 +55,11 @@ echo ""
 echo "==> 3/3 自動セットアップ完了！残りの手動ステップ:"
 echo ""
 echo "  1) Xへログイン（初回のみ）:"
-echo "       python3 pilot-company/browser/x_browser_bot.py login"
+echo "       $PY pilot-company/browser/x_browser_bot.py login"
 echo ""
 echo "  2) 動作確認（実際には投稿されません）:"
 echo "       echo 'テスト投稿です' > pilot-company/tasks/x_queue/test.txt"
-echo "       python3 pilot-company/browser/x_browser_bot.py post --dry-run"
+echo "       $PY pilot-company/browser/x_browser_bot.py post --dry-run"
 echo "       rm pilot-company/tasks/x_queue/test.txt"
 echo ""
 echo "  3) Macのスリープ設定（9〜18時に寝かせない）: HARU_MANUAL.md 参照"

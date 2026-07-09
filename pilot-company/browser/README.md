@@ -12,21 +12,23 @@
 ## セットアップ（1回だけ・約15分）
 
 ```bash
-# 1. 依存のインストール
-pip3 install playwright
-python3 -m playwright install chromium
+# 1. 一括セットアップ（venv作成・Playwright導入・launchd 3本登録）
+#    ※macOSのHomebrew PythonはPEP 668でpip直接インストール禁止のため、
+#      専用venv（~/.x-bot-venv）に隔離してインストールされる
+cd ~/my-virtual-team-agents
+zsh pilot-company/browser/setup_local.sh
 
 # 2. Xへログイン（専用プロファイル ~/.x-bot-profile に保存される）
-cd ~/my-virtual-team-agents
-python3 pilot-company/browser/x_browser_bot.py login
+~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py login
 
 # 3. 動作確認（実際には投稿しない）
-#    事前に tasks/x_queue/ にテスト用 .txt を1つ置いてから:
-python3 pilot-company/browser/x_browser_bot.py post --dry-run
+echo 'テスト投稿です' > pilot-company/tasks/x_queue/test.txt
+~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post --dry-run
+rm pilot-company/tasks/x_queue/test.txt
 # → browser/logs/ のスクリーンショットで入力状態を確認する
 
-# 4. 初回だけ有人で本番投稿を1回見届ける
-python3 pilot-company/browser/x_browser_bot.py post
+# 4. 初回だけ有人で本番投稿を1回見届ける（キューに実ドラフトが入ってから）
+~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post
 ```
 
 ## launchd 登録（3本）
