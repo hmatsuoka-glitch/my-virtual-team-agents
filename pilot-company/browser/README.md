@@ -9,27 +9,57 @@
 > **X APIキーを環境変数に設定した時点で、クラウド側がAPI投稿に自動で切り替わる。**
 > その際はこのボットの launchd を unload して退役させること。
 
+## 2つの接続モード
+
+Xは「自動化ブラウザからのログイン」をbot検出で弾くことがある（実際に
+「お使いのアカウントへのログインが現在許可されていません」エラーが確認された）。
+これを避けるため、**普段使いのChromeに後から接続するCDPモードを推奨**する。
+
+| モード | 仕組み | bot検出 | ログイン作業 |
+|--------|--------|---------|------------|
+| CDPモード（推奨） | 普段のChromeを特殊起動し、ボットが接続 | されにくい（本物のブラウザ） | 不要（ログイン済みを使う） |
+| プロファイルモード | 専用の自動化ブラウザを開く | されやすい | 必要（弾かれる場合あり） |
+
 ## セットアップ（1回だけ・約15分）
 
+### 共通: Python環境の用意
+
 ```bash
-# 1. 一括セットアップ（venv作成・Playwright導入・launchd 3本登録）
-#    ※macOSのHomebrew PythonはPEP 668でpip直接インストール禁止のため、
-#      専用venv（~/.x-bot-venv）に隔離してインストールされる
 cd ~/my-virtual-team-agents
-zsh pilot-company/browser/setup_local.sh
+zsh pilot-company/browser/setup_local.sh   # venv作成・Playwright導入・launchd 3本登録
+```
+（macOSのHomebrew PythonはPEP 668でpip直接インストール禁止のため、専用venv ~/.x-bot-venv に隔離）
 
-# 2. Xへログイン（専用プロファイル ~/.x-bot-profile に保存される）
-~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py login
+### CDPモード（推奨）
 
-# 3. 動作確認（実際には投稿しない）
+```bash
+# 1. Chromeを完全終了 → CDP有効で再起動（普段のプロファイル・ログイン状態を使う）
+osascript -e 'quit app "Google Chrome"'; sleep 2
+zsh pilot-company/browser/start_chrome_cdp.sh
+#    → 開いたChromeで x.com を開き、ログイン済みか確認する
+
+# 2. 環境変数でCDP接続を有効化して動作確認（投稿しない）
+export X_BOT_CDP=http://localhost:9222
 echo 'テスト投稿です' > pilot-company/tasks/x_queue/test.txt
 ~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post --dry-run
 rm pilot-company/tasks/x_queue/test.txt
-# → browser/logs/ のスクリーンショットで入力状態を確認する
 
-# 4. 初回だけ有人で本番投稿を1回見届ける（キューに実ドラフトが入ってから）
+# 3. 初回だけ有人で本番投稿を1回見届ける（キューに実ドラフトが入ってから）
 ~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post
 ```
+
+CDPモードをlaunchdで常用する場合は、各plistの起動コマンド先頭で
+`start_chrome_cdp.sh` を呼び、環境変数 `X_BOT_CDP` を設定する（setup_local.sh がCDP対応版を生成）。
+
+### プロファイルモード（CDPが使えない時のフォールバック）
+
+```bash
+~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py login   # Xにログイン
+echo 'テスト投稿です' > pilot-company/tasks/x_queue/test.txt
+~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post --dry-run
+rm pilot-company/tasks/x_queue/test.txt
+```
+※このモードは冒頭のbot検出エラーが出る可能性がある。出たらCDPモードに切り替えること。
 
 ## launchd 登録（3本）
 
