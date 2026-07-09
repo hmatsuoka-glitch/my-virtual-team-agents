@@ -33,7 +33,7 @@ write_plist() {
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd ${REPO} &amp;&amp; git pull --rebase &amp;&amp; ${PY} pilot-company/browser/x_browser_bot.py ${sub} &amp;&amp; git add pilot-company &amp;&amp; git commit -m "x-bot: ${sub}" &amp;&amp; git push || true</string>
+    <string>cd ${REPO} &amp;&amp; zsh pilot-company/browser/start_chrome_cdp.sh &amp;&amp; sleep 5 &amp;&amp; export X_BOT_CDP=http://127.0.0.1:9222 &amp;&amp; git pull --rebase &amp;&amp; ${PY} pilot-company/browser/x_browser_bot.py ${sub} &amp;&amp; git add pilot-company &amp;&amp; git commit -m "x-bot: ${sub}" &amp;&amp; git push || true</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>${hour}</integer><key>Minute</key><integer>${min}</integer></dict>

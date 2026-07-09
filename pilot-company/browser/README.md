@@ -32,14 +32,16 @@ zsh pilot-company/browser/setup_local.sh   # venv作成・Playwright導入・lau
 
 ### CDPモード（推奨）
 
+> Chrome 136以降はデフォルトプロファイルでのリモートデバッグを禁止しているため、
+> **専用プロファイル `~/.x-bot-chrome`（本物のGoogle Chrome）** を使う。初回だけそこでXにログインする。
+
 ```bash
-# 1. Chromeを完全終了 → CDP有効で再起動（普段のプロファイル・ログイン状態を使う）
-osascript -e 'quit app "Google Chrome"'; sleep 2
+# 1. 専用プロファイルのChromeをCDP有効で起動
 zsh pilot-company/browser/start_chrome_cdp.sh
-#    → 開いたChromeで x.com を開き、ログイン済みか確認する
+#    → 開いたChromeで x.com を開き、【初回のみ】いつも通りXにログインする（以降は保持される）
 
 # 2. 環境変数でCDP接続を有効化して動作確認（投稿しない）
-export X_BOT_CDP=http://localhost:9222
+export X_BOT_CDP=http://127.0.0.1:9222
 echo 'テスト投稿です' > pilot-company/tasks/x_queue/test.txt
 ~/.x-bot-venv/bin/python pilot-company/browser/x_browser_bot.py post --dry-run
 rm pilot-company/tasks/x_queue/test.txt
