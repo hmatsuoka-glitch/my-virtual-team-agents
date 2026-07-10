@@ -15,7 +15,11 @@
 
 3. **制作実行**: 選んだタスクを Task tool で担当エージェント（subagent_type: kotone または sho）に委任して実行する
    - 商品関連 → kotone。成果物は pilot-company/products/ 配下に保存
-   - 集客コンテンツ → sho。X投稿は pilot-company/drafts/ に1ファイル1投稿。**note無料記事は pilot-company/tasks/note_queue/ に frontmatter付き（`visibility: free`・title・tags）で保存**（note-botが自動公開する。書式は既存の note_queue/note_article_01.md を参照）
+   - 集客コンテンツ → sho。X投稿は pilot-company/drafts/ に1ファイル1投稿。**note無料記事は pilot-company/tasks/note_queue/ に frontmatter付きで保存**（note-botが自動公開）。書式は note_queue/note_article_01.md を参照。**読まれる記事の必須ルール**:
+     - frontmatter に `visibility: free` / `eyecatch: auto` / `eyecatch_sub: 現場の採用ノート` / `title` / `tags` を必ず記載（アイキャッチ画像はタイトルから自動生成される）
+     - 構成は逆三角形（結論→説明→補足）。本文200〜400字ごとに `##` 見出しで小グループ化
+     - スマホ可読性のため2〜3文ごとに改行（空行で段落を分ける）
+     - 煽り・誇大表現・断定は禁止。事実と具体で書く（strategy/learnings準拠）
 
 4. **検収**: haruto として成果物を検収する
    - 合格（X投稿） → 次の「X自動投稿」へ
