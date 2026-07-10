@@ -18,7 +18,12 @@
 4プロンプトの終了処理を「①git push を試す → ②403ならGitHub MCPにフォールバック」に統一。
 これで Mac でも対話セッションでも書き込みが通る。
 
-## 今後の構成 2案（HARU選択待ち）
+## 決定: 案A（Mac一元化）— 2026-07-09 HARU選択
+
+Macのlaunchdで `claude -p` を実行し生成もMacで行い、Macのgitでpushする。クラウドの無人Routineは停止済み。
+セットアップ: `pilot-company/orchestrator/setup_orchestrator.sh`（Macで実行）。
+
+## 参考: 検討した2案
 
 ### 案A: Mac一元化（最も堅牢・推奨）
 - Macのlaunchdで `claude -p "$(cat pilot-company/prompts/xxx.md)"` を実行し、生成もMacで行う。書き込みはMacのgit push（成功実績あり）
