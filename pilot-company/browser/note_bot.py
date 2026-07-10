@@ -47,8 +47,9 @@ SEL_TITLE = ['textarea[placeholder="記事タイトル"]', 'textarea[placeholder
 SEL_BODY = ['div[contenteditable="true"][role="textbox"]', '.ProseMirror',
             'div[contenteditable="true"]:not([aria-label*="タイトル"])',
             'div[contenteditable="true"]']
-SEL_EYECATCH_BTN = ['button:has-text("見出し画像を追加")', 'button:has-text("画像を追加")',
-                    '[aria-label*="見出し画像"]', 'figure button', 'button:has-text("記事に画像を追加")']
+SEL_EYECATCH_BTN = ['button:has-text("見出し画像を追加")', 'text=見出し画像を追加',
+                    'button:has-text("記事に画像を追加")', 'button:has-text("画像を追加")',
+                    '[aria-label*="見出し画像"]', '[class*="eyecatch"] button', 'figure button']
 SEL_EYECATCH_UPLOAD = ['button:has-text("画像をアップロード")', 'button:has-text("アップロード")',
                        'text=画像をアップロード']
 SEL_EYECATCH_SAVE = ['button:has-text("保存")', 'button:has-text("適用")', 'button:has-text("完了")',
@@ -128,6 +129,31 @@ def gen_eyecatch(p, title, sub):
     return out
 
 
+def apply_heading(page, big=True):
+    """直前に入力した行を選択し、noteのバブルメニューで見出しにする（失敗しても無害）。"""
+    try:
+        kb = page.keyboard
+        kb.press("Home")
+        kb.down("Shift"); kb.press("End"); kb.up("Shift")
+        time.sleep(0.4)
+        cands = (['button[aria-label*="大見出し"]', 'button:has-text("大見出し")']
+                 if big else
+                 ['button[aria-label*="小見出し"]', 'button:has-text("小見出し")'])
+        cands += ['button[aria-label*="見出し"]', 'button:has-text("見出し")']
+        for sel in cands:
+            try:
+                page.click(sel, timeout=1500)
+                time.sleep(0.3)
+                kb.press("End")  # 選択解除
+                return True
+            except Exception:
+                continue
+        kb.press("End")
+    except Exception:
+        pass
+    return False
+
+
 # ---- 本文を note の見出し・段落に整形して入力 ----
 def enter_body(page, md):
     kb = page.keyboard
@@ -155,9 +181,9 @@ def enter_body(page, md):
             kb.press("Enter")
         head = blk[0]
         hm = re.match(r"^(#{2,6})\s+(.*)", head)
-        if hm:  # 見出し: note のショートカット（## / ###）で入力
-            note_pref = "#" * (len(hm.group(1)) - 1) + " "   # ##→"# ", ###→"## "
-            kb.type(note_pref + hm.group(2).strip(), delay=12)
+        if hm:  # 見出し: プレーン入力 → 行を選択してnoteの見出しボタンで整形
+            kb.type(hm.group(2).strip(), delay=10)
+            apply_heading(page, big=(len(hm.group(1)) <= 2))
         elif re.match(r"^\s*---\s*$", head):  # 区切り線
             kb.type("---")
         elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
@@ -176,8 +202,14 @@ def enter_body(page, md):
 
 
 def try_set_eyecatch(page, img_path):
-    """アイキャッチ設定（失敗しても記事作成は続行）。"""
+    """アイキャッチ設定（失敗しても記事作成は続行）。ボタンは画面最上部にあるため先に上へスクロール。"""
     try:
+        try:
+            page.evaluate("window.scrollTo(0, 0)")
+            page.mouse.move(640, 120)  # 上部にホバーしてボタンを出す
+            time.sleep(0.8)
+        except Exception:
+            pass
         btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
         btn.click()
         time.sleep(1.5)
@@ -250,6 +282,11 @@ def run(mode, dry_run=False):
             page.keyboard.type(title, delay=random.uniform(20, 45))
             time.sleep(1)
 
+            # アイキャッチ設定は「本文入力より先」に行う（本文入力後は下へスクロールしボタンが画面外になるため）
+            eyecatch_ok = False
+            if eyecatch:
+                eyecatch_ok = try_set_eyecatch(page, eyecatch)
+
             # 本文（整形入力）。paid は無料部のみ
             b = find(page, SEL_BODY)
             b.click()
@@ -263,11 +300,6 @@ def run(mode, dry_run=False):
                         "円と有料ラインは人間が設定して公開）"
             enter_body(page, body_in)
             time.sleep(random.uniform(1.5, 3))
-
-            # アイキャッチ設定（任意・失敗しても続行）
-            eyecatch_ok = False
-            if eyecatch:
-                eyecatch_ok = try_set_eyecatch(page, eyecatch)
 
             if dry_run:
                 save_error(page, "dryrun")
