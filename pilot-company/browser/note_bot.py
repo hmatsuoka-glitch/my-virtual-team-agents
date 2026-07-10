@@ -220,8 +220,32 @@ def _record(art, title, status, visibility, url=""):
         ])
 
 
+def cmd_login():
+    """専用Chrome(CDP)を note のログインページに移動し、手動ログインを待つ。"""
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        browser, page = get_page(p)
+        try:
+            page.goto("https://note.com/login")
+            try:
+                page.bring_to_front()
+            except Exception:
+                pass
+            print("開いた専用Chromeで note にログインしてください。完了したら Enter を押してください。")
+            input()
+            print("OK。ログイン状態は専用プロファイルに保持されます。")
+        finally:
+            try:
+                browser.close()  # CDP接続の切断のみ（Chrome本体は起動したまま）
+            except Exception:
+                pass
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if not args or args[0] not in ("draft", "publish"):
+    if not args or args[0] not in ("login", "draft", "publish"):
         sys.exit(__doc__)
-    run(args[0], dry_run="--dry-run" in args)
+    if args[0] == "login":
+        cmd_login()
+    else:
+        run(args[0], dry_run="--dry-run" in args)
