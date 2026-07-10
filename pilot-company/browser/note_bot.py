@@ -181,9 +181,8 @@ def enter_body(page, md):
             kb.press("Enter")
         head = blk[0]
         hm = re.match(r"^(#{2,6})\s+(.*)", head)
-        if hm:  # 見出し: プレーン入力 → 行を選択してnoteの見出しボタンで整形
-            kb.type(hm.group(2).strip(), delay=10)
-            apply_heading(page, big=(len(hm.group(1)) <= 2))
+        if hm:  # 見出し: プレーンな行として入力（選択操作で本文が壊れるため見出しスタイルは付けない）
+            kb.type(hm.group(2).strip(), delay=8)
         elif re.match(r"^\s*---\s*$", head):  # 区切り線
             kb.type("---")
         elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
