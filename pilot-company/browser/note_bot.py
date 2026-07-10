@@ -181,9 +181,8 @@ def enter_body(page, md):
             kb.press("Enter")
         head = blk[0]
         hm = re.match(r"^(#{2,6})\s+(.*)", head)
-        if hm:  # 見出し: プレーン入力 → 行を選択してnoteの見出しボタンで整形
-            kb.type(hm.group(2).strip(), delay=10)
-            apply_heading(page, big=(len(hm.group(1)) <= 2))
+        if hm:  # 見出し: プレーンな行として入力（選択操作で本文が壊れるため見出しスタイルは付けない）
+            kb.type(hm.group(2).strip(), delay=8)
         elif re.match(r"^\s*---\s*$", head):  # 区切り線
             kb.type("---")
         elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
@@ -345,6 +344,64 @@ def _record(art, title, status, visibility, url=""):
         ])
 
 
+def cmd_inspect():
+    """note新規記事エディタのボタン一覧と、文字選択時に出るツールバーを吸い出す診断。"""
+    from playwright.sync_api import sync_playwright
+    out = []
+
+    def dump_buttons(page):
+        res = []
+        for b in page.query_selector_all('button, [role="button"], a[role="button"], label'):
+            try:
+                if not b.is_visible():
+                    continue
+                txt = (b.inner_text() or "").strip().replace("\n", " ")[:28]
+                al = (b.get_attribute("aria-label") or "")[:28]
+                if txt or al:
+                    res.append(f"text='{txt}' aria='{al}'")
+            except Exception:
+                pass
+        return res
+
+    with sync_playwright() as p:
+        browser, page = get_page(p)
+        try:
+            page.goto(NEW_URL, wait_until="domcontentloaded")
+            time.sleep(3)
+            if "login" in page.url:
+                sys.exit("未ログインです。note_bot.py login でログインしてください")
+            out.append("=== URL === " + page.url)
+            out.append("\n=== 初期ボタン（この中に『見出し画像』系があるはず） ===")
+            before = dump_buttons(page)
+            out += before
+            # 本文に文字を入れて選択 → バブルツールバーを出す
+            try:
+                b = find(page, SEL_BODY)
+                b.click()
+                page.keyboard.type("見出しテスト行", delay=20)
+                time.sleep(0.5)
+                page.keyboard.press("Home")
+                page.keyboard.down("Shift"); page.keyboard.press("End"); page.keyboard.up("Shift")
+                time.sleep(1.2)
+                out.append("\n=== 文字選択後に増えたボタン（この中に『見出し』整形があるはず） ===")
+                after = dump_buttons(page)
+                for x in after:
+                    if x not in before:
+                        out.append(x)
+            except Exception as e:
+                out.append("選択ツールバー取得失敗: " + str(e))
+            ERR_DIR.mkdir(parents=True, exist_ok=True)
+            path = ERR_DIR / "note_inspect.txt"
+            path.write_text("\n".join(out), encoding="utf-8")
+            print("診断結果を保存しました。次のファイルの中身を共有してください:")
+            print("  " + str(path))
+        finally:
+            try:
+                browser.close()
+            except Exception:
+                pass
+
+
 def cmd_login():
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
@@ -367,9 +424,11 @@ def cmd_login():
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if not args or args[0] not in ("login", "draft", "publish"):
+    if not args or args[0] not in ("login", "inspect", "draft", "publish"):
         sys.exit(__doc__)
     if args[0] == "login":
         cmd_login()
+    elif args[0] == "inspect":
+        cmd_inspect()
     else:
         run(args[0], dry_run="--dry-run" in args)
