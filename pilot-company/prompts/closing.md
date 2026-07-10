@@ -19,7 +19,10 @@
 
 5. **記憶の整理**: memory/learnings.md が肥大化していたら（目安200行超）、古い項目を要約・統合して圧縮する。事実とデータは消さず、重複と冗長さだけを削る
 
-6. **終了処理**: `git add pilot-company && git commit -m "closing: 日報 YYYY-MM-DD" && git pull --rebase && git push`（push先は現在のブランチ）
+6. **終了処理（無人セッションの書き込み経路・重要）**: 変更した pilot-company/ 配下のファイルを **GitHub MCP でコミットする**。
+   1. `git status --porcelain pilot-company` で変更・新規ファイルを列挙する
+   2. GitHub MCP の `mcp__github__push_files` で owner=hmatsuoka-glitch / repo=my-virtual-team-agents / branch=main にまとめてコミットする（メッセージ例: `closing: 日報 YYYY-MM-DD`）
+   3. **`git push` は使わない**（403 になる）。GitHub MCP が使えない場合のみ `git pull --rebase && git push` を試す
 
 ## 厳守事項
 

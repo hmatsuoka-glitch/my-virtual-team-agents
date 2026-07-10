@@ -27,7 +27,10 @@
    - `python3 pilot-company/scripts/post_to_x.py <ドラフトファイル>` を実行し、成功したら backlog に `[公開済み] <ファイル> <投稿URL>` と記録
    - エラー時はメッセージの指示に従う: キー未設定→ドラフトを tasks/x_queue/ にコピーし backlog に `[投稿予約]` と記録（ローカルボットが9:30に投稿する）/ 文字数超過→短縮して1回だけ再実行 / 上限到達→明日に回す
 
-6. **終了処理**: `git add pilot-company && git commit -m "morning: <今日やったことの要約>" && git pull --rebase && git push` を実行（push先は現在のブランチ）
+6. **終了処理（無人セッションの書き込み経路・重要）**: 変更した pilot-company/ 配下のファイルを **GitHub MCP でコミットする**。
+   1. `git status --porcelain pilot-company` で変更・新規ファイルを列挙する
+   2. GitHub MCP の `mcp__github__push_files`（複数ファイル一括）で owner=hmatsuoka-glitch / repo=my-virtual-team-agents / branch=main にまとめてコミットする（メッセージ例: `morning: <今日やったことの要約>`）
+   3. **`git push` は使わない**（無人セッションは proxy 認証が無く 403 になる）。GitHub MCP が使えない場合のみ `git pull --rebase && git push` を試し、失敗したら日報に記録する
 
 ## 厳守事項
 

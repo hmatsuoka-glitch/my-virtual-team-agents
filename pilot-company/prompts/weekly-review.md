@@ -28,7 +28,10 @@
 
 5. **来週のタスク生成**: 改善施策 TOP3 を具体的なタスクに分解し、tasks/backlog.md に担当付きで追加する
 
-6. **終了処理**: `git add pilot-company && git commit -m "weekly-review: YYYY-Wnn" && git pull --rebase && git push`（push先は現在のブランチ）
+6. **終了処理（無人セッションの書き込み経路・重要）**: 変更した pilot-company/ 配下のファイルを **GitHub MCP でコミットする**。
+   1. `git status --porcelain pilot-company` で変更・新規ファイルを列挙する
+   2. GitHub MCP の `mcp__github__push_files` で owner=hmatsuoka-glitch / repo=my-virtual-team-agents / branch=main にまとめてコミットする（メッセージ例: `weekly-review: YYYY-Wnn`）
+   3. **`git push` は使わない**（403 になる）。GitHub MCP が使えない場合のみ `git pull --rebase && git push` を試す
 
 ## 厳守事項
 
