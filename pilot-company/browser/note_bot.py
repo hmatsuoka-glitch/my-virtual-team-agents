@@ -1,32 +1,28 @@
 #!/usr/bin/env python3
 """note をログイン済みChrome(CDP)で自動投稿するローカルボット。X bot と同じCDP方式。
 
-X API移行と同様、note公式APIが無いためブラウザ操作で自動化する（2026-07-10 HARU指示・
-「NoteもX同様に自動投稿まで」）。**ローカルMacで launchd から実行**。
+note公式APIが無いためブラウザ操作で自動化（2026-07-10 HARU指示）。ローカルMacで実行。
+整形（見出し・改行）＋アイキャッチ画像の自動生成・設定に対応（2026-07-10 改善）。
 
-前提:
-  - X bot と同じ CDP Chrome（start_chrome_cdp.sh・ポート9222・プロファイル ~/.x-bot-chrome）を使う
-  - その Chrome で **note にもログイン済み**であること（初回のみ手動ログイン）
-  - 環境変数 X_BOT_CDP=http://127.0.0.1:9222 を設定して実行
+前提: start_chrome_cdp.sh の CDP Chrome（ポート9222・~/.x-bot-chrome）で note にログイン済み。
+      環境変数 X_BOT_CDP=http://127.0.0.1:9222 を設定して実行。
 
 キュー: pilot-company/tasks/note_queue/*.md（frontmatter付き）
   ---
   title: 記事タイトル
-  visibility: free        # free=自動公開 / paid=下書き保存し人間が価格設定して公開
-  price: 980              # paid のとき
-  paywall_marker: <<PAYWALL>>   # paid のとき、本文中のこの行以降が有料
+  visibility: free        # free=自動公開 / paid=下書き＋人間承認
+  eyecatch: auto          # auto=タイトルからブランド画像を自動生成 / none / <画像パス>
+  eyecatch_sub: 建設業・小さな会社の採用ノート   # アイキャッチ副題（任意）
   tags: 建設業, 採用
   ---
-  （本文markdown）
+  （本文markdown。# 見出しはnote見出しに変換。空行で段落）
 
 サブコマンド:
-  draft   [--dry-run]  最古の記事を「下書き保存」する（最も安全）
-  publish [--dry-run]  最古の記事を処理する（free=公開 / paid=下書き＋人間へ）
-  --dry-run は公開直前で止め、スクリーンショットを残す
-
-安全装置: 1回1本 / 失敗時スクショ(browser/logs) ＋ キュー保持 / 対外公開は free のみ自動
-必要: ~/.x-bot-venv の playwright
+  login              専用Chromeを note ログインページへ（手動ログイン用）
+  draft [--dry-run]  最古の記事を下書き保存
+  publish [--dry-run] free=公開 / paid=下書き。--dry-run は公開直前で停止
 """
+import csv
 import datetime
 import os
 import pathlib
@@ -40,9 +36,9 @@ QUEUE = PILOT / "tasks" / "note_queue"
 POSTED = QUEUE / "posted"
 LOG = PILOT / "logs" / "note_posts.csv"
 ERR_DIR = PILOT / "browser" / "logs"
+GEN_DIR = PILOT / "brand" / "eyecatch"
 CDP = os.environ.get("X_BOT_CDP", "").strip().replace("localhost", "127.0.0.1")
 
-# note のセレクタ（実機で調整が必要な場合あり。壊れたら browser/logs のスクショで確認）
 NEW_URL = "https://note.com/notes/new"
 SEL_TITLE = ['textarea[placeholder="記事タイトル"]', 'textarea[placeholder*="タイトル"]',
              '[placeholder="記事タイトル"]', 'textarea[aria-label*="タイトル"]',
@@ -51,15 +47,19 @@ SEL_TITLE = ['textarea[placeholder="記事タイトル"]', 'textarea[placeholder
 SEL_BODY = ['div[contenteditable="true"][role="textbox"]', '.ProseMirror',
             'div[contenteditable="true"]:not([aria-label*="タイトル"])',
             'div[contenteditable="true"]']
-SEL_PUBLISH_NEXT = ['button:has-text("公開に進む")', 'button:has-text("公開設定")',
-                    'button:has-text("次へ")']
-SEL_PUBLISH_DO = ['button:has-text("投稿する")', 'button:has-text("公開する")',
-                  'button:has-text("公開")']
+SEL_EYECATCH_BTN = ['button:has-text("見出し画像を追加")', 'button:has-text("画像を追加")',
+                    '[aria-label*="見出し画像"]', 'figure button', 'button:has-text("記事に画像を追加")']
+SEL_EYECATCH_UPLOAD = ['button:has-text("画像をアップロード")', 'button:has-text("アップロード")',
+                       'text=画像をアップロード']
+SEL_EYECATCH_SAVE = ['button:has-text("保存")', 'button:has-text("適用")', 'button:has-text("完了")',
+                     'button:has-text("この画像を使用")']
+SEL_PUBLISH_NEXT = ['button:has-text("公開に進む")', 'button:has-text("公開設定")', 'button:has-text("次へ")']
+SEL_PUBLISH_DO = ['button:has-text("投稿する")', 'button:has-text("公開する")', 'button:has-text("公開")']
 
 
 def parse_article(path):
     text = path.read_text(encoding="utf-8")
-    meta = {"visibility": "free", "tags": ""}
+    meta = {"visibility": "free", "tags": "", "eyecatch": "auto"}
     body = text
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)$", text, re.DOTALL)
     if m:
@@ -69,24 +69,6 @@ def parse_article(path):
                 meta[k.strip()] = v.strip()
         body = m.group(2)
     return meta, body.strip()
-
-
-def clean_for_note(md):
-    """markdown を note 貼り付け用のプレーンテキストへ。見出し記号や強調記号を除去し段落を保つ。"""
-    out = []
-    for line in md.splitlines():
-        s = line.rstrip()
-        if re.match(r"^\s*---\s*$", s):
-            out.append("")
-            continue
-        s = re.sub(r"^\s*#{1,6}\s+", "", s)        # 見出し記号を除去（テキストは残す）
-        s = re.sub(r"\*\*(.+?)\*\*", r"\1", s)     # **bold** → text
-        s = re.sub(r"`(.+?)`", r"\1", s)           # `code` → text
-        s = re.sub(r"^\s*>\s?", "", s)             # 引用記号除去
-        s = re.sub(r"^\s*[-*]\s+", "・", s)         # 箇条書き → ・
-        out.append(s)
-    txt = "\n".join(out)
-    return re.sub(r"\n{3,}", "\n\n", txt).strip()
 
 
 def save_error(page, tag):
@@ -102,7 +84,7 @@ def find(page, selectors, timeout=15000):
     last = None
     for sel in selectors:
         try:
-            return page.wait_for_selector(sel, timeout=timeout // len(selectors) + 1500)
+            return page.wait_for_selector(sel, timeout=max(2000, timeout // len(selectors)))
         except Exception as e:
             last = e
     raise last or RuntimeError("selector not found")
@@ -117,6 +99,109 @@ def get_page(p):
     return browser, page
 
 
+# ---- アイキャッチ画像の自動生成（ヘッドレスChromeでHTML→PNG。ブランド濃紺×安全イエロー） ----
+def gen_eyecatch(p, title, sub):
+    GEN_DIR.mkdir(parents=True, exist_ok=True)
+    safe = re.sub(r"[^0-9A-Za-zぁ-んァ-ン一-龠]+", "_", title)[:24] or "eyecatch"
+    out = GEN_DIR / f"{safe}.png"
+    disp = title if len(title) <= 34 else title[:33] + "…"
+    html = (
+        '<!doctype html><meta charset="utf-8"><style>'
+        'html,body{margin:0;width:1280px;height:670px;background:#1B3A5B;overflow:hidden;'
+        "font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif}"
+        '.w{width:1280px;height:670px;box-sizing:border-box;padding:90px 96px;display:flex;'
+        'flex-direction:column;justify-content:center}'
+        '.tag{color:#F5C518;font-size:30px;font-weight:700;letter-spacing:4px;margin-bottom:26px}'
+        '.ttl{color:#fff;font-size:62px;font-weight:800;line-height:1.35}'
+        '.u{width:120px;height:8px;background:#F5C518;border-radius:4px;margin-top:34px}'
+        '</style><div class="w"><div class="tag">' + (sub or "現場の採用ノート") +
+        '</div><div class="ttl">' + disp + '</div><div class="u"></div></div>'
+    )
+    b = p.chromium.launch(headless=True)
+    try:
+        pg = b.new_page(viewport={"width": 1280, "height": 670}, device_scale_factor=2)
+        pg.set_content(html, wait_until="load")
+        time.sleep(0.5)
+        pg.screenshot(path=str(out))
+    finally:
+        b.close()
+    return out
+
+
+# ---- 本文を note の見出し・段落に整形して入力 ----
+def enter_body(page, md):
+    kb = page.keyboard
+    lines = md.splitlines()
+    # 先頭の H1（タイトル重複）は除去
+    while lines and (not lines[0].strip() or re.match(r"^#\s+", lines[0])):
+        if re.match(r"^#\s+", lines[0]):
+            lines.pop(0)
+            break
+        lines.pop(0)
+    # 空行で段落ブロックへ分割
+    blocks, cur = [], []
+    for ln in lines:
+        if ln.strip() == "":
+            if cur:
+                blocks.append(cur); cur = []
+        else:
+            cur.append(ln)
+    if cur:
+        blocks.append(cur)
+
+    first = True
+    for blk in blocks:
+        if not first:
+            kb.press("Enter")
+        head = blk[0]
+        hm = re.match(r"^(#{2,6})\s+(.*)", head)
+        if hm:  # 見出し: note のショートカット（## / ###）で入力
+            note_pref = "#" * (len(hm.group(1)) - 1) + " "   # ##→"# ", ###→"## "
+            kb.type(note_pref + hm.group(2).strip(), delay=12)
+        elif re.match(r"^\s*---\s*$", head):  # 区切り線
+            kb.type("---")
+        elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
+            for i, li in enumerate(blk):
+                if i:
+                    kb.press("Enter")
+                kb.type("- " + re.sub(r"^\s*[・\-*]\s+", "", li).strip(), delay=8)
+        else:  # 段落: 強調記号を除いて高速入力
+            para = " ".join(x.strip() for x in blk)
+            para = re.sub(r"\*\*(.+?)\*\*", r"\1", para)
+            para = re.sub(r"`(.+?)`", r"\1", para)
+            para = re.sub(r"^\s*>\s?", "", para)
+            kb.insert_text(para)
+        first = False
+    kb.press("Enter")
+
+
+def try_set_eyecatch(page, img_path):
+    """アイキャッチ設定（失敗しても記事作成は続行）。"""
+    try:
+        btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
+        btn.click()
+        time.sleep(1.5)
+        try:
+            up = find(page, SEL_EYECATCH_UPLOAD, timeout=4000)
+            up.click()
+            time.sleep(1)
+        except Exception:
+            pass
+        fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
+        fi.set_input_files(str(img_path))
+        time.sleep(2.5)
+        try:
+            sv = find(page, SEL_EYECATCH_SAVE, timeout=6000)
+            sv.click()
+            time.sleep(2)
+        except Exception:
+            pass
+        return True
+    except Exception:
+        save_error(page, "eyecatch-fail")
+        return False
+
+
 def run(mode, dry_run=False):
     from playwright.sync_api import sync_playwright
 
@@ -128,78 +213,87 @@ def run(mode, dry_run=False):
     meta, body = parse_article(art)
     title = meta.get("title", art.stem)
     visibility = meta.get("visibility", "free").lower()
-
-    # paid は「販売開始」に当たるため自動公開しない（下書き止まり＋人間へ）
     force_draft = (mode == "draft") or (visibility == "paid")
 
     with sync_playwright() as p:
+        # アイキャッチを先に生成（自動）
+        eyecatch = None
+        ec = meta.get("eyecatch", "auto")
+        if ec and ec != "none":
+            try:
+                if ec == "auto":
+                    eyecatch = gen_eyecatch(p, title, meta.get("eyecatch_sub", ""))
+                else:
+                    cand = (PILOT / ec) if not os.path.isabs(ec) else pathlib.Path(ec)
+                    eyecatch = cand if cand.exists() else None
+            except Exception:
+                eyecatch = None
+
         browser, page = get_page(p)
         try:
             page.goto(NEW_URL, wait_until="domcontentloaded")
             time.sleep(random.uniform(2, 4))
-
-            # ログイン判定（未ログインだと新規記事ページがログインへ飛ぶ）
-            cur = page.url
-            if "login" in cur or "signup" in cur:
+            if "login" in page.url or "signup" in page.url:
                 save_error(page, "not-logged-in")
                 sys.exit("error: この専用Chromeが note に未ログインです。"
-                         "start_chrome_cdp.sh で開いたChromeで note.com にログインしてから再実行してください。\n"
-                         f"  現在のURL: {cur}")
+                         "`note_bot.py login` でログインしてから再実行してください。\n"
+                         f"  現在のURL: {page.url}")
 
             # タイトル
             try:
                 t = find(page, SEL_TITLE)
             except Exception:
                 save_error(page, "no-title")
-                sys.exit(f"error: タイトル入力欄が見つかりません（noteのUI変更の可能性）。"
-                         f"browser/logs のスクショと以下を共有してください:\n"
+                sys.exit(f"error: タイトル入力欄が見つかりません。browser/logs のスクショと共有:\n"
                          f"  URL: {page.url}\n  ページ名: {page.title()}")
             t.click()
-            page.keyboard.type(title, delay=random.uniform(20, 50))
+            page.keyboard.type(title, delay=random.uniform(20, 45))
             time.sleep(1)
 
-            # 本文（有料は無料部のみ本文へ。有料部は人間が設定するため注記）
-            note_body = clean_for_note(body)
+            # 本文（整形入力）。paid は無料部のみ
+            b = find(page, SEL_BODY)
+            b.click()
+            time.sleep(0.5)
+            body_in = body
             if visibility == "paid":
                 marker = meta.get("paywall_marker", "")
                 if marker and marker in body:
-                    free_part = clean_for_note(body.split(marker, 1)[0])
-                    note_body = free_part + "\n\n（※ここから先は有料。価格" + \
-                        meta.get("price", "") + "円と有料ラインは人間が設定して公開）"
-            b = find(page, SEL_BODY)
-            b.click()
-            page.keyboard.insert_text(note_body)
+                    body_in = body.split(marker, 1)[0] + \
+                        "\n\n（※ここから先は有料。価格" + meta.get("price", "") + \
+                        "円と有料ラインは人間が設定して公開）"
+            enter_body(page, body_in)
             time.sleep(random.uniform(1.5, 3))
+
+            # アイキャッチ設定（任意・失敗しても続行）
+            eyecatch_ok = False
+            if eyecatch:
+                eyecatch_ok = try_set_eyecatch(page, eyecatch)
 
             if dry_run:
                 save_error(page, "dryrun")
-                print(f"[dry-run] タイトル・本文を入力しました（公開せず）。visibility={visibility}")
+                print(f"[dry-run] 入力完了（公開せず）。visibility={visibility} / "
+                      f"アイキャッチ={'設定OK' if eyecatch_ok else ('生成のみ:' + str(eyecatch) if eyecatch else '無し')}")
                 print(f"  スクショ: {ERR_DIR}")
                 return
 
-            # note は下書き自動保存。draft モード/paid はここで終了（人間が確認・公開）
             if force_draft:
-                time.sleep(3)  # 自動保存待ち
+                time.sleep(3)
                 _record(art, title, "draft", visibility)
                 reason = "paid(販売開始は人間承認)" if visibility == "paid" else "draftモード"
                 print(f"下書き保存しました（{reason}）: {title}")
-                print("  → note で内容確認し、必要なら価格・有料ラインを設定して公開してください")
                 return
 
-            # free の自動公開
             nxt = find(page, SEL_PUBLISH_NEXT, timeout=20000)
             nxt.click()
             time.sleep(random.uniform(2, 4))
-            # タグ入力は任意（失敗しても続行）
             do = find(page, SEL_PUBLISH_DO, timeout=20000)
             do.click()
             time.sleep(random.uniform(3, 6))
 
-            url = page.url
-            _record(art, title, "published-free", visibility, url)
+            _record(art, title, "published-free", visibility, page.url)
             POSTED.mkdir(parents=True, exist_ok=True)
             art.rename(POSTED / art.name)
-            print(f"公開しました（無料記事）: {url}")
+            print(f"公開しました（無料記事・アイキャッチ{'あり' if eyecatch_ok else 'なし'}）: {page.url}")
         except Exception as e:
             save_error(page, "fail")
             sys.exit(f"error: note操作に失敗（キューは保持）: {e}\n  スクショ: {ERR_DIR}")
@@ -211,7 +305,6 @@ def run(mode, dry_run=False):
 
 
 def _record(art, title, status, visibility, url=""):
-    import csv
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG, "a", newline="", encoding="utf-8") as f:
         csv.writer(f).writerow([
@@ -221,7 +314,6 @@ def _record(art, title, status, visibility, url=""):
 
 
 def cmd_login():
-    """専用Chrome(CDP)を note のログインページに移動し、手動ログインを待つ。"""
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser, page = get_page(p)
@@ -236,7 +328,7 @@ def cmd_login():
             print("OK。ログイン状態は専用プロファイルに保持されます。")
         finally:
             try:
-                browser.close()  # CDP接続の切断のみ（Chrome本体は起動したまま）
+                browser.close()
             except Exception:
                 pass
 
