@@ -15,11 +15,12 @@
 
 3. **制作実行**: 選んだタスクを Task tool で担当エージェント（subagent_type: kotone または sho）に委任して実行する
    - 商品関連 → kotone。成果物は pilot-company/products/ 配下に保存
-   - 集客コンテンツ → sho。成果物は pilot-company/drafts/ 配下に保存（X投稿は1ファイル1投稿、note記事は1ファイル1記事）
+   - 集客コンテンツ → sho。X投稿は pilot-company/drafts/ に1ファイル1投稿。**note無料記事は pilot-company/tasks/note_queue/ に frontmatter付き（`visibility: free`・title・tags）で保存**（note-botが自動公開する。書式は既存の note_queue/note_article_01.md を参照）
 
 4. **検収**: haruto として成果物を検収する
    - 合格（X投稿） → 次の「X自動投稿」へ
-   - 合格（それ以外: note記事・商品等） → backlog に `[承認待ち] <pilot-company/ から始まるフルパス> <公開先>` として登録（例: pilot-company/drafts/note_article_01.md。短縮形やファイル名だけの記載は禁止）
+   - 合格（note無料記事） → tasks/note_queue/ に置けば note-bot が自動公開（承認不要）。backlog に `[note公開予約] <pilot-company/ から始まるフルパス>` と記録
+   - 合格（note有料記事＝商品販売・その他の重要公開） → backlog に `[承認待ち] <pilot-company/ から始まるフルパス> <公開先>` として登録（例: pilot-company/tasks/note_queue/xxx.md。短縮形やファイル名だけの記載は禁止）。**販売開始は人間承認が必須**
    - 不合格 → 修正指示を backlog に書き、可能なら同セッション内で1回だけ再委任
 
 5. **X自動投稿（本日1本目）**: 検収合格した未公開のX投稿ドラフトを**1本だけ**公開する
@@ -34,6 +35,6 @@
 
 ## 厳守事項
 
-- 対外公開は**X投稿のみ・必ず post_to_x.py 経由・1セッション1本まで**許可。note公開・販売開始・支出は絶対に行わない（承認待ちに積む）
+- 対外公開の自動化は**X投稿（post_to_x.py／Xボット・1セッション1本）**と**note無料記事（tasks/note_queue/ 経由でnote-botが公開）**のみ許可。**note有料記事・商品販売開始・支出は絶対に自動で行わず、必ず承認待ちに積む**
 - pilot-company/ 配下以外のファイルは変更しない（.claude/agents/ は閲覧のみ）
 - わからないこと（市場情報・競合価格など）は WebSearch で自分で調べ、要点を memory/learnings.md に追記する
