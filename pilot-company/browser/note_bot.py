@@ -44,9 +44,12 @@ CDP = os.environ.get("X_BOT_CDP", "").strip().replace("localhost", "127.0.0.1")
 
 # note のセレクタ（実機で調整が必要な場合あり。壊れたら browser/logs のスクショで確認）
 NEW_URL = "https://note.com/notes/new"
-SEL_TITLE = ['textarea[placeholder*="タイトル"]', '[placeholder="記事タイトル"]',
-             'textarea[aria-label*="タイトル"]']
+SEL_TITLE = ['textarea[placeholder="記事タイトル"]', 'textarea[placeholder*="タイトル"]',
+             '[placeholder="記事タイトル"]', 'textarea[aria-label*="タイトル"]',
+             '[contenteditable="true"][aria-label*="タイトル"]', 'h1[contenteditable="true"]',
+             'textarea']
 SEL_BODY = ['div[contenteditable="true"][role="textbox"]', '.ProseMirror',
+            'div[contenteditable="true"]:not([aria-label*="タイトル"])',
             'div[contenteditable="true"]']
 SEL_PUBLISH_NEXT = ['button:has-text("公開に進む")', 'button:has-text("公開設定")',
                     'button:has-text("次へ")']
@@ -135,8 +138,22 @@ def run(mode, dry_run=False):
             page.goto(NEW_URL, wait_until="domcontentloaded")
             time.sleep(random.uniform(2, 4))
 
+            # ログイン判定（未ログインだと新規記事ページがログインへ飛ぶ）
+            cur = page.url
+            if "login" in cur or "signup" in cur:
+                save_error(page, "not-logged-in")
+                sys.exit("error: この専用Chromeが note に未ログインです。"
+                         "start_chrome_cdp.sh で開いたChromeで note.com にログインしてから再実行してください。\n"
+                         f"  現在のURL: {cur}")
+
             # タイトル
-            t = find(page, SEL_TITLE)
+            try:
+                t = find(page, SEL_TITLE)
+            except Exception:
+                save_error(page, "no-title")
+                sys.exit(f"error: タイトル入力欄が見つかりません（noteのUI変更の可能性）。"
+                         f"browser/logs のスクショと以下を共有してください:\n"
+                         f"  URL: {page.url}\n  ページ名: {page.title()}")
             t.click()
             page.keyboard.type(title, delay=random.uniform(20, 50))
             time.sleep(1)
