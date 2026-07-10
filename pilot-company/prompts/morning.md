@@ -27,7 +27,10 @@
    - `python3 pilot-company/scripts/post_to_x.py <ドラフトファイル>` を実行し、成功したら backlog に `[公開済み] <ファイル> <投稿URL>` と記録
    - エラー時はメッセージの指示に従う: キー未設定→ドラフトを tasks/x_queue/ にコピーし backlog に `[投稿予約]` と記録（ローカルボットが9:30に投稿する）/ 文字数超過→短縮して1回だけ再実行 / 上限到達→明日に回す
 
-6. **終了処理**: `git add pilot-company && git commit -m "morning: <今日やったことの要約>" && git pull --rebase && git push` を実行（push先は現在のブランチ）
+6. **終了処理（書き込み・万能手順）**: 変更した pilot-company/ 配下のファイルをコミットする。
+   1. まず `git add pilot-company && git commit -m "morning: <今日やったことの要約>" && git pull --rebase && git push` を試す（Mac・対話セッションはこれで成功）
+   2. push が 403/権限エラーで失敗した場合のみ、GitHub MCP `mcp__github__push_files`（owner=hmatsuoka-glitch, repo=my-virtual-team-agents, branch=main）で変更ファイルをコミットする
+   3. どちらも不可なら日報に「書き込み失敗」と記録して報告する
 
 ## 厳守事項
 

@@ -18,7 +18,10 @@
 5. **市場学習（15分ぶんの調査）**: WebSearch で「建設業 採用」関連の当日性のあるトピック（ニュース・トレンド・競合商品の動き）を1つ調べ、
    要点と自社への示唆を memory/learnings.md に追記する
 
-6. **終了処理**: `git add pilot-company && git commit -m "midday: <要約>" && git pull --rebase && git push`（push先は現在のブランチ）
+6. **終了処理（書き込み・万能手順）**: 変更した pilot-company/ 配下のファイルをコミットする。
+   1. まず `git add pilot-company && git commit -m "midday: <要約>" && git pull --rebase && git push` を試す（Mac・対話セッションはこれで成功）
+   2. push が 403/権限エラーで失敗した場合のみ、GitHub MCP `mcp__github__push_files`（owner=hmatsuoka-glitch, repo=my-virtual-team-agents, branch=main）で変更ファイルをコミットする
+   3. どちらも不可なら日報に「書き込み失敗」と記録して報告する
 
 ## 厳守事項
 

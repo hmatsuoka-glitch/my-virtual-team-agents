@@ -19,7 +19,10 @@
 
 5. **記憶の整理**: memory/learnings.md が肥大化していたら（目安200行超）、古い項目を要約・統合して圧縮する。事実とデータは消さず、重複と冗長さだけを削る
 
-6. **終了処理**: `git add pilot-company && git commit -m "closing: 日報 YYYY-MM-DD" && git pull --rebase && git push`（push先は現在のブランチ）
+6. **終了処理（書き込み・万能手順）**: 変更した pilot-company/ 配下のファイルをコミットする。
+   1. まず `git add pilot-company && git commit -m "closing: 日報 YYYY-MM-DD" && git pull --rebase && git push` を試す（Mac・対話セッションはこれで成功）
+   2. push が 403/権限エラーで失敗した場合のみ、GitHub MCP `mcp__github__push_files`（owner=hmatsuoka-glitch, repo=my-virtual-team-agents, branch=main）で変更ファイルをコミットする
+   3. どちらも不可なら日報に「書き込み失敗」と記録して報告する
 
 ## 厳守事項
 
