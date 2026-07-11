@@ -117,75 +117,56 @@ def _grab_toast_url(page):
     return ""
 
 
-def _posted_signal(page):
-    """投稿が完了したと判断できる兆候（トースト表示 or 作成画面から離脱）があれば True。"""
+def _compose_open(page):
+    """投稿作成モーダルがまだ開いているか（＝未投稿）。モーダルのPostボタン tweetButton の有無で判定。
+    ※ホームのインライン入力欄は tweetButtonInline で別物なので誤検知しない。"""
     try:
-        if page.locator('[data-testid="toast"]').count() > 0:
-            return True
+        return page.locator('[data-testid="tweetButton"]').count() > 0
     except Exception:
-        pass
-    try:
-        if "/compose/" not in page.url:  # 投稿成功で /home 等へ遷移する
-            return True
-    except Exception:
-        pass
-    return False
+        return False
 
 
 def _submit_tweet(page):
-    """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに成否を検証してから次の手段へ。
-    手段: ①投稿ボタン（通常/インライン） ②Cmd+Enter（Mac） ③Ctrl+Enter。
+    """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに『モーダルが閉じたか』を検証してから次へ。
+    手段: ①Postボタン ②Postボタン強制クリック ③Cmd+Enter ④Ctrl+Enter。
     戻り値: (posted: bool, url: str)。urlはトーストから拾えた場合のみ（拾えなければ""）。"""
     captured = {"url": ""}
 
-    def check_done():
-        """投稿完了なら url（不明なら""）を、未完了なら None を返す。"""
-        if _posted_signal(page):
-            if not captured["url"]:
-                captured["url"] = _grab_toast_url(page)
-            return captured["url"]
-        return None
+    def posted():
+        """投稿完了（成功トースト or 作成モーダルが閉じた）なら True。URLも拾えれば控える。"""
+        try:
+            if page.locator('[data-testid="toast"]').count() > 0:
+                if not captured["url"]:
+                    captured["url"] = _grab_toast_url(page)
+                return True
+        except Exception:
+            pass
+        return not _compose_open(page)
 
-    def wait_done(secs=8):
+    def wait_posted(secs=10):
         for _ in range(secs):
             time.sleep(1.0)
-            r = check_done()
-            if r is not None:
-                return r
-        return check_done()
+            if posted():
+                return True
+        return posted()
 
-    # ① 投稿ボタンをクリック（通常＝tweetButton / インライン＝tweetButtonInline）
-    for sel in ('[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]'):
-        if check_done() is not None:
+    methods = (
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000),
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000, force=True),
+        lambda: page.keyboard.press("Meta+Enter"),   # Xの公式ショートカット（Mac ⌘+Enter）
+        lambda: page.keyboard.press("Control+Enter"),  # Mac以外フォールバック
+    )
+    for run in methods:
+        if posted():
             return True, captured["url"]
-        try:
-            btn = page.locator(sel).first
-            if btn.count() > 0:
-                try:
-                    btn.click(timeout=3000)
-                except Exception:
-                    btn.click(timeout=3000, force=True)  # オーバーレイ対策で強制クリック
-                if wait_done() is not None:
-                    return True, captured["url"]
-        except Exception:
-            pass
-    # ② Cmd+Enter（Xの公式ショートカット。Macでは Meta=⌘）
-    if not _posted_signal(page):
-        try:
-            page.keyboard.press("Meta+Enter")
-        except Exception:
-            pass
-        if wait_done() is not None:
-            return True, captured["url"]
-    # ③ Ctrl+Enter（Mac以外・フォールバック）
-    if not _posted_signal(page):
-        try:
-            page.keyboard.press("Control+Enter")
-        except Exception:
-            pass
-        if wait_done() is not None:
-            return True, captured["url"]
-    return _posted_signal(page), captured["url"]
+        if _compose_open(page):
+            try:
+                run()
+            except Exception:
+                pass
+            if wait_posted():
+                return True, captured["url"]
+    return posted(), captured["url"]
 
 
 def cmd_post(dry_run=False):
