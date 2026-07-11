@@ -323,97 +323,126 @@ def _focus_editor_end(page):
         pass
 
 
-def _open_image_inserter(page):
-    """現在行に画像アップロードUI(input[type=file])を開く。複数手段を順に試す。
-    先頭/アイキャッチは『画像を追加』ボタン、本文中は『＋(メニューを開く)』→『画像』。"""
-    # 手段1: 常設の「画像を追加」ボタン（主に先頭・アイキャッチ用。本文中には出ない）
-    try:
-        page.click('[aria-label="画像を追加"]', timeout=2500)
-        time.sleep(0.8)
-        try:
-            page.click('button:has-text("画像をアップロード")', timeout=1500)
-            time.sleep(0.6)
-        except Exception:
-            pass
-        if page.locator('input[type="file"]').count() > 0:
-            return True
-    except Exception:
-        pass
-    # 手段2: 行左の「＋（メニューを開く）」→ メニュー内の「画像」
+def _open_inline_image_uploader(page):
+    """本文中画像用: 行左の『＋（メニューを開く）』→ メニュー内の『画像』。
+    file input が出たら True。見つからなければメニュー項目をログして False。"""
     try:
         page.click('[aria-label="メニューを開く"]', timeout=2500)
         time.sleep(0.9)
-        for isel in ('[aria-label="画像"]', '[aria-label*="画像"]',
-                     '[role="menuitem"]:has-text("画像")', 'button:has-text("画像")',
-                     'li:has-text("画像")', 'text=画像'):
-            try:
-                page.click(isel, timeout=1200)
-                time.sleep(0.9)
-                if page.locator('input[type="file"]').count() > 0:
-                    return True
-            except Exception:
-                pass
-        # 画像項目が見つからない: メニュー項目をログして原因特定
+    except Exception:
+        return False
+    for isel in ('[aria-label="画像"]', '[aria-label*="画像"]',
+                 '[role="menuitem"]:has-text("画像")', 'button:has-text("画像")',
+                 'li:has-text("画像")', 'text=画像'):
         try:
-            items = page.evaluate(
-                "() => Array.from(document.querySelectorAll("
-                "'[role=\"menuitem\"],[role=\"menu\"] button,[role=\"menu\"] li,button,li'))"
-                ".filter(b => b.offsetParent)"
-                ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
-                ".filter(Boolean).slice(0, 30)"
-            )
-            print(f"[warn] ＋メニューに画像項目が見つからず。可視項目: {items}")
+            page.click(isel, timeout=1200)
+            time.sleep(0.9)
+            if page.locator('input[type="file"]').count() > 0:
+                return True
         except Exception:
             pass
+    try:
+        items = page.evaluate(
+            "() => Array.from(document.querySelectorAll("
+            "'[role=\"menuitem\"],[role=\"menu\"] button,[role=\"menu\"] li,button,li'))"
+            ".filter(b => b.offsetParent)"
+            ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+            ".filter(Boolean).slice(0, 30)"
+        )
+        print(f"[warn] ＋メニューに画像項目が見つからず。可視項目: {items}")
     except Exception:
         pass
     return False
 
 
-def insert_image(page, img_path):
-    """本文カーソル位置に画像を挿入。挿入成否は『エディタ内の画像が増えたか』で判定。
-    失敗しても Escape で閉じるだけにして後続の見出し入力を壊さない。"""
+def insert_image(page, img_path, inline=True):
+    """画像を挿入。inline=True は本文中バナー（＋メニュー→画像数の増加で判定）、
+    inline=False はヘッダー(アイキャッチ)（画像を追加→位置調整ダイアログの保存で判定）。
+    UIが別物なので開き方も成功判定も分ける。失敗しても Escape で閉じて後続を壊さない。"""
     before = _editor_img_count(page)
     try:
-        if not _open_image_inserter(page):
-            print("[warn] 画像挿入UIを開けず（このバナーはスキップ）")
-            _dismiss_popups(page)
-            return False
+        if inline:
+            if not _open_inline_image_uploader(page):
+                print("[warn] 本文バナーの画像UIを開けず（スキップ）")
+                _dismiss_popups(page)
+                return False
+        else:
+            # アイキャッチ: 常設『画像を追加』→（あれば）アップロード
+            btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
+            btn.click()
+            time.sleep(1.5)
+            try:
+                up = find(page, SEL_EYECATCH_UPLOAD, timeout=3000)
+                up.click()
+                time.sleep(1)
+            except Exception:
+                pass
+
         fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
         fi.set_input_files(str(img_path))
         time.sleep(3)  # アップロード＆位置調整ダイアログを待つ
 
-        # ダイアログがあれば「保存」/Enter で確定。成功判定は画像数の増加。
-        for _ in range(4):
-            for meth in ("role", "textis", "enter"):
-                try:
-                    if meth == "role":
-                        page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
-                    elif meth == "textis":
-                        page.click('button:text-is("保存")', timeout=1200)
-                    else:
-                        page.keyboard.press("Enter")
-                except Exception:
-                    pass
-            time.sleep(1.2)
-            if before >= 0 and _editor_img_count(page) > before:
-                return True
-        # 4回試して画像が増えなければ失敗扱い（可視ボタンをログ）
+        if inline:
+            # 本文中: 保存ダイアログが無いことが多い → 画像数の増加で判定
+            for _ in range(4):
+                for meth in ("role", "textis", "enter"):
+                    try:
+                        if meth == "role":
+                            page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
+                        elif meth == "textis":
+                            page.click('button:text-is("保存")', timeout=1200)
+                        else:
+                            page.keyboard.press("Enter")
+                    except Exception:
+                        pass
+                time.sleep(1.2)
+                if before >= 0 and _editor_img_count(page) > before:
+                    return True
+            try:
+                btns = page.evaluate(
+                    "() => Array.from(document.querySelectorAll('button'))"
+                    ".filter(b => b.offsetParent)"
+                    ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+                    ".filter(Boolean).slice(0, 24)"
+                )
+                print(f"[warn] 本文バナーを確定できず。可視ボタン: {btns}")
+            except Exception:
+                pass
+            save_error(page, "banner-save-fail")
+            _dismiss_popups(page)
+            return before >= 0 and _editor_img_count(page) > before
+
+        # アイキャッチ: 位置調整ダイアログの「保存」を押し、ダイアログが閉じたら成功
+        saved = False
+        for meth in ("role", "textis", "enter"):
+            try:
+                if meth == "role":
+                    page.get_by_role("button", name="保存", exact=True).click(timeout=3000)
+                elif meth == "textis":
+                    page.click('button:text-is("保存")', timeout=2500)
+                else:
+                    page.keyboard.press("Enter")
+            except Exception:
+                pass
+            time.sleep(2)
+            try:
+                if page.locator('button:has-text("キャンセル")').count() == 0:
+                    saved = True
+                    break
+            except Exception:
+                pass
+        if not saved:
+            save_error(page, "eyecatch-save-fail")
+            _dismiss_popups(page)
+            return False
         try:
-            btns = page.evaluate(
-                "() => Array.from(document.querySelectorAll('button'))"
-                ".filter(b => b.offsetParent)"
-                ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
-                ".filter(Boolean).slice(0, 24)"
-            )
-            print(f"[warn] 画像挿入を確定できず。可視ボタン: {btns}")
+            page.keyboard.press("End")
+            page.keyboard.press("Enter")
         except Exception:
             pass
-        save_error(page, "img-save-fail")
-        _dismiss_popups(page)
-        return before >= 0 and _editor_img_count(page) > before
+        return True
     except Exception as e:
-        print(f"[warn] insert_image 例外: {e}")
+        print(f"[warn] insert_image 例外({'inline' if inline else 'eyecatch'}): {e}")
         save_error(page, "img-insert-fail")
         _dismiss_popups(page)
         return False
@@ -488,7 +517,7 @@ def run(mode, dry_run=False):
             time.sleep(0.5)
             eyecatch_ok = False
             if eyecatch:
-                eyecatch_ok = insert_image(page, eyecatch)
+                eyecatch_ok = insert_image(page, eyecatch, inline=False)
             body_in = body
             if visibility == "paid":
                 marker = meta.get("paywall_marker", "")
