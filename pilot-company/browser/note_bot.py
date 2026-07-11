@@ -230,6 +230,7 @@ def enter_body(page, md, banners=None):
             if htxt in banners:
                 ok = insert_image(page, banners[htxt])  # 離脱防止の途中バナー
                 print(f"[info] バナー挿入 {'OK' if ok else 'NG'}: {htxt[:16]}")
+                _focus_editor_end(page)  # バナー挿入後、末尾にキャレットを戻す
             kb.type(htxt, delay=8)
             time.sleep(0.3)
             hok = apply_heading(page, len(htxt))
@@ -291,52 +292,113 @@ def _editor_img_count(page):
         return -1
 
 
-def insert_image(page, img_path):
-    """本文カーソル位置に画像を挿入。挿入成否は『エディタ内の画像が増えたか』で判定。
-    本文中バナー(ProseMirror内figure)はダイアログの閉挙動が出ないため、画像数増加を主判定にする。"""
-    before = _editor_img_count(page)
-    try:
-        btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
-        btn.click()
-        time.sleep(1.5)
+def _dismiss_popups(page):
+    """開いているメニュー/ダイアログを Escape で閉じる（フォーカスを壊さない安全策）。"""
+    for _ in range(2):
         try:
-            up = find(page, SEL_EYECATCH_UPLOAD, timeout=3000)
-            up.click()
-            time.sleep(1)
+            page.keyboard.press("Escape")
+            time.sleep(0.3)
         except Exception:
             pass
+
+
+def _focus_editor_end(page):
+    """本文エディタ末尾にキャレットを戻す（バナー挿入後に見出し入力を確実にするため）。"""
+    try:
+        page.evaluate(
+            """() => {
+                const pm = document.querySelector('.ProseMirror');
+                if (!pm) return;
+                pm.focus();
+                const sel = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(pm);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }"""
+        )
+        time.sleep(0.2)
+    except Exception:
+        pass
+
+
+def _open_image_inserter(page):
+    """現在行に画像アップロードUI(input[type=file])を開く。複数手段を順に試す。
+    先頭/アイキャッチは『画像を追加』ボタン、本文中は『＋(メニューを開く)』→『画像』。"""
+    # 手段1: 常設の「画像を追加」ボタン（主に先頭・アイキャッチ用。本文中には出ない）
+    try:
+        page.click('[aria-label="画像を追加"]', timeout=2500)
+        time.sleep(0.8)
+        try:
+            page.click('button:has-text("画像をアップロード")', timeout=1500)
+            time.sleep(0.6)
+        except Exception:
+            pass
+        if page.locator('input[type="file"]').count() > 0:
+            return True
+    except Exception:
+        pass
+    # 手段2: 行左の「＋（メニューを開く）」→ メニュー内の「画像」
+    try:
+        page.click('[aria-label="メニューを開く"]', timeout=2500)
+        time.sleep(0.9)
+        for isel in ('[aria-label="画像"]', '[aria-label*="画像"]',
+                     '[role="menuitem"]:has-text("画像")', 'button:has-text("画像")',
+                     'li:has-text("画像")', 'text=画像'):
+            try:
+                page.click(isel, timeout=1200)
+                time.sleep(0.9)
+                if page.locator('input[type="file"]').count() > 0:
+                    return True
+            except Exception:
+                pass
+        # 画像項目が見つからない: メニュー項目をログして原因特定
+        try:
+            items = page.evaluate(
+                "() => Array.from(document.querySelectorAll("
+                "'[role=\"menuitem\"],[role=\"menu\"] button,[role=\"menu\"] li,button,li'))"
+                ".filter(b => b.offsetParent)"
+                ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+                ".filter(Boolean).slice(0, 30)"
+            )
+            print(f"[warn] ＋メニューに画像項目が見つからず。可視項目: {items}")
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return False
+
+
+def insert_image(page, img_path):
+    """本文カーソル位置に画像を挿入。挿入成否は『エディタ内の画像が増えたか』で判定。
+    失敗しても Escape で閉じるだけにして後続の見出し入力を壊さない。"""
+    before = _editor_img_count(page)
+    try:
+        if not _open_image_inserter(page):
+            print("[warn] 画像挿入UIを開けず（このバナーはスキップ）")
+            _dismiss_popups(page)
+            return False
         fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
         fi.set_input_files(str(img_path))
         time.sleep(3)  # アップロード＆位置調整ダイアログを待つ
 
-        # ダイアログがあれば「保存」/Enter で確定（本文中画像は無い場合もある）。
-        # 成功判定 = 画像が増えた OR ダイアログ（キャンセル）が消えた。
-        for meth in ("role", "textis", "enter"):
-            try:
-                if meth == "role":
-                    page.get_by_role("button", name="保存", exact=True).click(timeout=2500)
-                elif meth == "textis":
-                    page.click('button:text-is("保存")', timeout=2000)
-                else:
-                    page.keyboard.press("Enter")
-            except Exception:
-                pass
-            time.sleep(1.3)
-            grew = before >= 0 and _editor_img_count(page) > before
-            closed = False
-            try:
-                closed = page.locator('button:has-text("キャンセル")').count() == 0
-            except Exception:
-                pass
-            if grew or closed:
+        # ダイアログがあれば「保存」/Enter で確定。成功判定は画像数の増加。
+        for _ in range(4):
+            for meth in ("role", "textis", "enter"):
                 try:
-                    page.keyboard.press("End")
-                    page.keyboard.press("Enter")
+                    if meth == "role":
+                        page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
+                    elif meth == "textis":
+                        page.click('button:text-is("保存")', timeout=1200)
+                    else:
+                        page.keyboard.press("Enter")
                 except Exception:
                     pass
+            time.sleep(1.2)
+            if before >= 0 and _editor_img_count(page) > before:
                 return True
-
-        # 失敗: 可視ボタンをログに出して原因特定 → ダイアログを閉じて続行
+        # 4回試して画像が増えなければ失敗扱い（可視ボタンをログ）
         try:
             btns = page.evaluate(
                 "() => Array.from(document.querySelectorAll('button'))"
@@ -348,19 +410,12 @@ def insert_image(page, img_path):
         except Exception:
             pass
         save_error(page, "img-save-fail")
-        try:
-            page.click('button:has-text("キャンセル")', timeout=2000)
-            time.sleep(1)
-        except Exception:
-            pass
-        return False
+        _dismiss_popups(page)
+        return before >= 0 and _editor_img_count(page) > before
     except Exception as e:
         print(f"[warn] insert_image 例外: {e}")
         save_error(page, "img-insert-fail")
-        try:
-            page.click('button:has-text("キャンセル")', timeout=2000)
-        except Exception:
-            pass
+        _dismiss_popups(page)
         return False
 
 
