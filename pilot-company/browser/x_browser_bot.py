@@ -104,6 +104,19 @@ def cmd_login():
     print("ログイン情報をプロファイルに保存しました:", PROFILE)
 
 
+def _grab_toast_url(page):
+    """投稿直後のトーストに出る「表示」リンクから投稿URLを拾う（消える前に即取得）。"""
+    try:
+        a = page.query_selector('[data-testid="toast"] a[href*="/status/"]')
+        if a:
+            href = a.get_attribute("href") or ""
+            if "/status/" in href:
+                return "https://x.com" + href
+    except Exception:
+        pass
+    return ""
+
+
 def _posted_signal(page):
     """投稿が完了したと判断できる兆候（トースト表示 or 作成画面から離脱）があれば True。"""
     try:
@@ -121,18 +134,30 @@ def _posted_signal(page):
 
 def _submit_tweet(page):
     """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに成否を検証してから次の手段へ。
-    手段: ①投稿ボタン（通常/インライン） ②Cmd+Enter（Mac） ③Ctrl+Enter。成功で True。"""
-    def wait_gone(secs=8):
+    手段: ①投稿ボタン（通常/インライン） ②Cmd+Enter（Mac） ③Ctrl+Enter。
+    戻り値: (posted: bool, url: str)。urlはトーストから拾えた場合のみ（拾えなければ""）。"""
+    captured = {"url": ""}
+
+    def check_done():
+        """投稿完了なら url（不明なら""）を、未完了なら None を返す。"""
+        if _posted_signal(page):
+            if not captured["url"]:
+                captured["url"] = _grab_toast_url(page)
+            return captured["url"]
+        return None
+
+    def wait_done(secs=8):
         for _ in range(secs):
             time.sleep(1.0)
-            if _posted_signal(page):
-                return True
-        return _posted_signal(page)
+            r = check_done()
+            if r is not None:
+                return r
+        return check_done()
 
     # ① 投稿ボタンをクリック（通常＝tweetButton / インライン＝tweetButtonInline）
     for sel in ('[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]'):
-        if _posted_signal(page):
-            return True
+        if check_done() is not None:
+            return True, captured["url"]
         try:
             btn = page.locator(sel).first
             if btn.count() > 0:
@@ -140,8 +165,8 @@ def _submit_tweet(page):
                     btn.click(timeout=3000)
                 except Exception:
                     btn.click(timeout=3000, force=True)  # オーバーレイ対策で強制クリック
-                if wait_gone():
-                    return True
+                if wait_done() is not None:
+                    return True, captured["url"]
         except Exception:
             pass
     # ② Cmd+Enter（Xの公式ショートカット。Macでは Meta=⌘）
@@ -150,17 +175,17 @@ def _submit_tweet(page):
             page.keyboard.press("Meta+Enter")
         except Exception:
             pass
-        if wait_gone():
-            return True
+        if wait_done() is not None:
+            return True, captured["url"]
     # ③ Ctrl+Enter（Mac以外・フォールバック）
     if not _posted_signal(page):
         try:
             page.keyboard.press("Control+Enter")
         except Exception:
             pass
-        if wait_gone():
-            return True
-    return _posted_signal(page)
+        if wait_done() is not None:
+            return True, captured["url"]
+    return _posted_signal(page), captured["url"]
 
 
 def cmd_post(dry_run=False):
@@ -198,22 +223,24 @@ def cmd_post(dry_run=False):
                 return
 
             # 最終POSTを確実に押す（押せなければキューを保持して中断＝投稿済み誤記録を防ぐ）
-            if not _submit_tweet(page):
+            posted, tweet_url = _submit_tweet(page)
+            if not posted:
                 save_error(page, "post-submit-fail")
                 sys.exit("error: 最終の投稿ボタンを押せませんでした（キューに残します）。"
                          f"スクショ確認: {ERR_DIR}")
 
-            tweet_url = ""
-            try:
-                a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=8000)
-                tweet_url = "https://x.com" + a.get_attribute("href")
-            except Exception:
+            # URLが未取得なら、トースト→自分のプロフィール最新投稿の順で拾い直す
+            if not tweet_url:
                 try:
-                    page.click('[data-testid="AppTabBar_Profile_Link"]')
-                    a = page.wait_for_selector('article a[href*="/status/"]', timeout=15000)
+                    a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=6000)
                     tweet_url = "https://x.com" + a.get_attribute("href")
                 except Exception:
-                    pass
+                    try:
+                        page.click('[data-testid="AppTabBar_Profile_Link"]')
+                        a = page.wait_for_selector('article a[href*="/status/"]', timeout=15000)
+                        tweet_url = "https://x.com" + a.get_attribute("href")
+                    except Exception:
+                        pass
             m = re.search(r"/status/(\d+)", tweet_url or "")
             tweet_id = m.group(1) if m else f"unknown-{int(time.time())}"
 
