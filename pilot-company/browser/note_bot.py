@@ -244,21 +244,49 @@ def insert_image(page, img_path):
             pass
         fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
         fi.set_input_files(str(img_path))
-        time.sleep(3)
+        time.sleep(3)  # 位置調整ダイアログが出るのを待つ
+
+        # ダイアログの「保存」を確実に押す（右上の『下書き保存』を誤認しないよう複数手段で）
+        saved = False
+        for meth in ("role", "textis", "enter"):
+            try:
+                if meth == "role":
+                    page.get_by_role("button", name="保存", exact=True).click(timeout=3500)
+                elif meth == "textis":
+                    page.click('button:text-is("保存")', timeout=3000)
+                else:
+                    page.keyboard.press("Enter")
+                time.sleep(2)
+            except Exception:
+                pass
+            # ダイアログが閉じた（キャンセルボタンが消えた）ら成功
+            try:
+                if page.locator('button:has-text("キャンセル")').count() == 0:
+                    saved = True
+                    break
+            except Exception:
+                pass
+        if not saved:
+            save_error(page, "img-save-fail")
+            # 詰まり防止: ダイアログをキャンセルして閉じ、画像なしで続行
+            try:
+                page.click('button:has-text("キャンセル")', timeout=2000)
+                time.sleep(1)
+            except Exception:
+                pass
+            return False
         try:
-            sv = find(page, SEL_EYECATCH_SAVE, timeout=5000)
-            sv.click()
-            time.sleep(2)
-        except Exception:
-            pass
-        try:
-            page.keyboard.press("End")   # 画像の後ろへカーソルを移す
+            page.keyboard.press("End")
             page.keyboard.press("Enter")
         except Exception:
             pass
         return True
     except Exception:
         save_error(page, "eyecatch-fail")
+        try:
+            page.click('button:has-text("キャンセル")', timeout=2000)
+        except Exception:
+            pass
         return False
 
 
