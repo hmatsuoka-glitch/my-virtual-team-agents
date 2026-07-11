@@ -127,26 +127,74 @@ def gen_eyecatch(p, title, sub):
     return out
 
 
-def apply_heading(page, n_chars):
-    """直前に入力した見出し行（n_chars文字）だけを選択し、noteの『見出し』ボタンで整形。
-    Home/End は文書全体を選ぶ挙動があり本文を壊すため、Shift+←を文字数ぶん送って厳密に選択する。"""
-    if n_chars <= 0:
-        return False
-    kb = page.keyboard
+def _caret_block_rect(page):
+    """現在のキャレットがあるブロック要素の中心座標を返す（トリプルクリック用）。"""
     try:
+        return page.evaluate(
+            """() => {
+                const sel = window.getSelection();
+                if (!sel || sel.rangeCount === 0) return null;
+                let node = sel.anchorNode;
+                if (node && node.nodeType === 3) node = node.parentElement;
+                while (node && node.nodeType === 1 &&
+                       getComputedStyle(node).display === 'inline')
+                    node = node.parentElement;
+                if (!node || node.nodeType !== 1) return null;
+                const r = node.getBoundingClientRect();
+                if (r.width < 2 || r.height < 2) return null;
+                return {x: r.left + r.width / 2, y: r.top + r.height / 2};
+            }"""
+        )
+    except Exception:
+        return None
+
+
+def _click_heading_button(page):
+    for sel in ('button:text-is("見出し")', 'button:has-text("見出し")',
+                '[aria-label="見出し"]', '[aria-label*="見出し"]'):
+        try:
+            page.click(sel, timeout=1500)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def apply_heading(page, n_chars=0):
+    """直前に入力した見出し行を note の『見出し』整形に変える。
+    noteのバブルツールバーは*マウス選択*でしか出ない（キーボード選択では出ない）ため、
+    トリプルクリックで見出し行を丸ごと選択してからツールバーの『見出し』を押す。"""
+    kb = page.keyboard
+    # 1) 本命: マウスのトリプルクリックで行選択 → バブルメニューの『見出し』
+    try:
+        rect = _caret_block_rect(page)
+        if rect:
+            page.mouse.click(rect["x"], rect["y"], click_count=3)
+            time.sleep(0.6)
+            if _click_heading_button(page):
+                time.sleep(0.3)
+                kb.press("End")  # 選択解除・行末へ
+                return True
+    except Exception:
+        pass
+    # 2) フォールバック: キーボードで文字数ぶん選択（従来手法）
+    try:
+        if n_chars <= 0:
+            return False
         for _ in range(n_chars):
             kb.press("Shift+ArrowLeft")
-        time.sleep(0.5)
-        page.click('button:text-is("見出し")', timeout=2500)
-        time.sleep(0.3)
+        time.sleep(0.4)
+        if _click_heading_button(page):
+            time.sleep(0.3)
+            kb.press("ArrowRight")
+            return True
         kb.press("ArrowRight")  # 選択解除・行末へ
-        return True
     except Exception:
         try:
             kb.press("ArrowRight")
         except Exception:
             pass
-        return False
+    return False
 
 
 # ---- 本文を note の見出し・段落に整形して入力（bannersがあれば見出し前に画像挿入） ----
@@ -180,10 +228,13 @@ def enter_body(page, md, banners=None):
         if hm:  # 見出し: （バナー対象なら画像挿入→）文字入力→選択→note『見出し』ボタンで整形
             htxt = hm.group(2).strip()
             if htxt in banners:
-                insert_image(page, banners[htxt])  # 離脱防止の途中バナー
+                ok = insert_image(page, banners[htxt])  # 離脱防止の途中バナー
+                print(f"[info] バナー挿入 {'OK' if ok else 'NG'}: {htxt[:16]}")
+                _focus_editor_end(page)  # バナー挿入後、末尾にキャレットを戻す
             kb.type(htxt, delay=8)
-            time.sleep(0.2)
-            apply_heading(page, len(htxt))
+            time.sleep(0.3)
+            hok = apply_heading(page, len(htxt))
+            print(f"[info] 見出し整形 {'OK' if hok else 'NG'}: {htxt[:16]}")
         elif re.match(r"^\s*---\s*$", head):  # 区切り線
             kb.type("---")
         elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
@@ -230,36 +281,150 @@ def gen_banner(p, text):
     return out
 
 
-def insert_image(page, img_path):
-    """本文カーソル位置に画像を挿入。失敗しても記事作成は続行。"""
+def _editor_img_count(page):
+    """エディタ領域内の画像数を返す（挿入成否の判定用）。取得失敗は -1。"""
     try:
-        btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
-        btn.click()
-        time.sleep(1.5)
+        return page.evaluate(
+            "() => (document.querySelector('.ProseMirror') || document.body)"
+            ".querySelectorAll('img').length"
+        )
+    except Exception:
+        return -1
+
+
+def _dismiss_popups(page):
+    """開いているメニュー/ダイアログを Escape で閉じる（フォーカスを壊さない安全策）。"""
+    for _ in range(2):
         try:
-            up = find(page, SEL_EYECATCH_UPLOAD, timeout=3000)
-            up.click()
-            time.sleep(1)
+            page.keyboard.press("Escape")
+            time.sleep(0.3)
         except Exception:
             pass
+
+
+def _focus_editor_end(page):
+    """本文エディタ末尾にキャレットを戻す（バナー挿入後に見出し入力を確実にするため）。"""
+    try:
+        page.evaluate(
+            """() => {
+                const pm = document.querySelector('.ProseMirror');
+                if (!pm) return;
+                pm.focus();
+                const sel = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(pm);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }"""
+        )
+        time.sleep(0.2)
+    except Exception:
+        pass
+
+
+def _open_inline_image_uploader(page):
+    """本文中画像用: 行左の『＋（メニューを開く）』→ メニュー内の『画像』。
+    file input が出たら True。見つからなければメニュー項目をログして False。"""
+    try:
+        page.click('[aria-label="メニューを開く"]', timeout=2500)
+        time.sleep(0.9)
+    except Exception:
+        return False
+    for isel in ('[aria-label="画像"]', '[aria-label*="画像"]',
+                 '[role="menuitem"]:has-text("画像")', 'button:has-text("画像")',
+                 'li:has-text("画像")', 'text=画像'):
+        try:
+            page.click(isel, timeout=1200)
+            time.sleep(0.9)
+            if page.locator('input[type="file"]').count() > 0:
+                return True
+        except Exception:
+            pass
+    try:
+        items = page.evaluate(
+            "() => Array.from(document.querySelectorAll("
+            "'[role=\"menuitem\"],[role=\"menu\"] button,[role=\"menu\"] li,button,li'))"
+            ".filter(b => b.offsetParent)"
+            ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+            ".filter(Boolean).slice(0, 30)"
+        )
+        print(f"[warn] ＋メニューに画像項目が見つからず。可視項目: {items}")
+    except Exception:
+        pass
+    return False
+
+
+def insert_image(page, img_path, inline=True):
+    """画像を挿入。inline=True は本文中バナー（＋メニュー→画像数の増加で判定）、
+    inline=False はヘッダー(アイキャッチ)（画像を追加→位置調整ダイアログの保存で判定）。
+    UIが別物なので開き方も成功判定も分ける。失敗しても Escape で閉じて後続を壊さない。"""
+    before = _editor_img_count(page)
+    try:
+        if inline:
+            if not _open_inline_image_uploader(page):
+                print("[warn] 本文バナーの画像UIを開けず（スキップ）")
+                _dismiss_popups(page)
+                return False
+        else:
+            # アイキャッチ: 常設『画像を追加』→（あれば）アップロード
+            btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
+            btn.click()
+            time.sleep(1.5)
+            try:
+                up = find(page, SEL_EYECATCH_UPLOAD, timeout=3000)
+                up.click()
+                time.sleep(1)
+            except Exception:
+                pass
+
         fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
         fi.set_input_files(str(img_path))
-        time.sleep(3)  # 位置調整ダイアログが出るのを待つ
+        time.sleep(3)  # アップロード＆位置調整ダイアログを待つ
 
-        # ダイアログの「保存」を確実に押す（右上の『下書き保存』を誤認しないよう複数手段で）
+        if inline:
+            # 本文中: 保存ダイアログが無いことが多い → 画像数の増加で判定
+            for _ in range(4):
+                for meth in ("role", "textis", "enter"):
+                    try:
+                        if meth == "role":
+                            page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
+                        elif meth == "textis":
+                            page.click('button:text-is("保存")', timeout=1200)
+                        else:
+                            page.keyboard.press("Enter")
+                    except Exception:
+                        pass
+                time.sleep(1.2)
+                if before >= 0 and _editor_img_count(page) > before:
+                    return True
+            try:
+                btns = page.evaluate(
+                    "() => Array.from(document.querySelectorAll('button'))"
+                    ".filter(b => b.offsetParent)"
+                    ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+                    ".filter(Boolean).slice(0, 24)"
+                )
+                print(f"[warn] 本文バナーを確定できず。可視ボタン: {btns}")
+            except Exception:
+                pass
+            save_error(page, "banner-save-fail")
+            _dismiss_popups(page)
+            return before >= 0 and _editor_img_count(page) > before
+
+        # アイキャッチ: 位置調整ダイアログの「保存」を押し、ダイアログが閉じたら成功
         saved = False
         for meth in ("role", "textis", "enter"):
             try:
                 if meth == "role":
-                    page.get_by_role("button", name="保存", exact=True).click(timeout=3500)
+                    page.get_by_role("button", name="保存", exact=True).click(timeout=3000)
                 elif meth == "textis":
-                    page.click('button:text-is("保存")', timeout=3000)
+                    page.click('button:text-is("保存")', timeout=2500)
                 else:
                     page.keyboard.press("Enter")
-                time.sleep(2)
             except Exception:
                 pass
-            # ダイアログが閉じた（キャンセルボタンが消えた）ら成功
+            time.sleep(2)
             try:
                 if page.locator('button:has-text("キャンセル")').count() == 0:
                     saved = True
@@ -267,13 +432,8 @@ def insert_image(page, img_path):
             except Exception:
                 pass
         if not saved:
-            save_error(page, "img-save-fail")
-            # 詰まり防止: ダイアログをキャンセルして閉じ、画像なしで続行
-            try:
-                page.click('button:has-text("キャンセル")', timeout=2000)
-                time.sleep(1)
-            except Exception:
-                pass
+            save_error(page, "eyecatch-save-fail")
+            _dismiss_popups(page)
             return False
         try:
             page.keyboard.press("End")
@@ -281,12 +441,10 @@ def insert_image(page, img_path):
         except Exception:
             pass
         return True
-    except Exception:
-        save_error(page, "eyecatch-fail")
-        try:
-            page.click('button:has-text("キャンセル")', timeout=2000)
-        except Exception:
-            pass
+    except Exception as e:
+        print(f"[warn] insert_image 例外({'inline' if inline else 'eyecatch'}): {e}")
+        save_error(page, "img-insert-fail")
+        _dismiss_popups(page)
         return False
 
 
@@ -328,8 +486,9 @@ def run(mode, dry_run=False):
                     try:
                         banners[htxt] = gen_banner(p, htxt)
                         picked += 1
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[warn] バナー生成失敗: {e}")
+        print(f"[info] セクションバナー生成: {len(banners)}枚 / 本文{len(body)}字")
 
         browser, page = get_page(p)
         try:
@@ -358,7 +517,7 @@ def run(mode, dry_run=False):
             time.sleep(0.5)
             eyecatch_ok = False
             if eyecatch:
-                eyecatch_ok = insert_image(page, eyecatch)
+                eyecatch_ok = insert_image(page, eyecatch, inline=False)
             body_in = body
             if visibility == "paid":
                 marker = meta.get("paywall_marker", "")
