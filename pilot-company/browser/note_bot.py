@@ -228,6 +228,10 @@ def enter_body(page, md, banners=None):
         if hm:  # 見出し: （バナー対象なら画像挿入→）文字入力→選択→note『見出し』ボタンで整形
             htxt = hm.group(2).strip()
             if htxt in banners:
+                # 挿入前に選択状態を必ず解除（前の見出しのバブル選択が残ると崩れるため）
+                _dismiss_popups(page)
+                _focus_editor_end(page)
+                kb.press("Enter")  # 画像用の新規空行
                 ok = insert_image(page, banners[htxt])  # 離脱防止の途中バナー
                 print(f"[info] バナー挿入 {'OK' if ok else 'NG'}: {htxt[:16]}")
                 _focus_editor_end(page)  # バナー挿入後、末尾にキャレットを戻す
@@ -383,21 +387,24 @@ def insert_image(page, img_path, inline=True):
         time.sleep(3)  # アップロード＆位置調整ダイアログを待つ
 
         if inline:
-            # 本文中: 保存ダイアログが無いことが多い → 画像数の増加で判定
-            for _ in range(4):
-                for meth in ("role", "textis", "enter"):
-                    try:
-                        if meth == "role":
-                            page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
-                        elif meth == "textis":
-                            page.click('button:text-is("保存")', timeout=1200)
-                        else:
-                            page.keyboard.press("Enter")
-                    except Exception:
-                        pass
-                time.sleep(1.2)
+            # 本文中: 多くはアップロード完了で自動挿入される。画像数の増加で判定。
+            # ※Enter連打は本文（選択中テキスト）を壊すため絶対にしない。
+            for _ in range(8):  # 最大~8秒、アップロード完了を待つ
+                time.sleep(1.0)
                 if before >= 0 and _editor_img_count(page) > before:
                     return True
+            # まだ増えないなら保存ダイアログがある可能性 → 保存ボタンだけ1回試す
+            for meth in ("role", "textis"):
+                try:
+                    if meth == "role":
+                        page.get_by_role("button", name="保存", exact=True).click(timeout=1500)
+                    else:
+                        page.click('button:text-is("保存")', timeout=1200)
+                except Exception:
+                    pass
+            time.sleep(1.5)
+            if before >= 0 and _editor_img_count(page) > before:
+                return True
             try:
                 btns = page.evaluate(
                     "() => Array.from(document.querySelectorAll('button'))"
