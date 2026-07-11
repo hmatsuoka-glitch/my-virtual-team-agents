@@ -50,8 +50,8 @@ SEL_BODY = ['div[contenteditable="true"][role="textbox"]', '.ProseMirror',
 SEL_EYECATCH_BTN = ['[aria-label="画像を追加"]', '[aria-label*="画像"]']
 SEL_EYECATCH_UPLOAD = ['button:has-text("画像をアップロード")', 'button:has-text("アップロード")',
                        'text=画像をアップロード']
-SEL_EYECATCH_SAVE = ['button:has-text("保存")', 'button:has-text("適用")', 'button:has-text("完了")',
-                     'button:has-text("この画像を使用")']
+SEL_EYECATCH_SAVE = ['button:text-is("保存")', 'button:has-text("この画像を使用")',
+                     'button:text-is("適用")', 'button:text-is("完了")']
 SEL_PUBLISH_NEXT = ['button:has-text("公開に進む")', 'button:has-text("公開設定")', 'button:has-text("次へ")']
 SEL_PUBLISH_DO = ['button:has-text("投稿する")', 'button:has-text("公開する")', 'button:has-text("公開")']
 
