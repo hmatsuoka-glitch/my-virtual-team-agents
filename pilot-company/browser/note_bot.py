@@ -149,8 +149,9 @@ def apply_heading(page, n_chars):
         return False
 
 
-# ---- 本文を note の見出し・段落に整形して入力 ----
-def enter_body(page, md):
+# ---- 本文を note の見出し・段落に整形して入力（bannersがあれば見出し前に画像挿入） ----
+def enter_body(page, md, banners=None):
+    banners = banners or {}
     kb = page.keyboard
     lines = md.splitlines()
     # 先頭の H1（タイトル重複）は除去
@@ -176,8 +177,10 @@ def enter_body(page, md):
             kb.press("Enter")
         head = blk[0]
         hm = re.match(r"^(#{2,6})\s+(.*)", head)
-        if hm:  # 見出し: 文字を入力→その文字数だけ選択→note『見出し』ボタンで整形
+        if hm:  # 見出し: （バナー対象なら画像挿入→）文字入力→選択→note『見出し』ボタンで整形
             htxt = hm.group(2).strip()
+            if htxt in banners:
+                insert_image(page, banners[htxt])  # 離脱防止の途中バナー
             kb.type(htxt, delay=8)
             time.sleep(0.2)
             apply_heading(page, len(htxt))
@@ -198,8 +201,37 @@ def enter_body(page, md):
     kb.press("Enter")
 
 
-def try_set_eyecatch(page, img_path):
-    """本文先頭に画像（アイキャッチ）を挿入。カーソルは本文にある前提。失敗しても記事作成は続行。"""
+def gen_banner(p, text):
+    """セクション区切り用のスリムなバナー画像を生成（離脱防止の途中画像）。"""
+    GEN_DIR.mkdir(parents=True, exist_ok=True)
+    safe = re.sub(r"[^0-9A-Za-zぁ-んァ-ン一-龠]+", "_", text)[:20] or "banner"
+    out = GEN_DIR / f"banner_{safe}.png"
+    disp = text if len(text) <= 30 else text[:29] + "…"
+    html = (
+        '<!doctype html><meta charset="utf-8"><style>'
+        'html,body{margin:0;width:1280px;height:420px;background:#1B3A5B;overflow:hidden;'
+        "font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif}"
+        '.w{width:1280px;height:420px;box-sizing:border-box;padding:0 96px;display:flex;'
+        'flex-direction:column;justify-content:center}'
+        '.tag{color:#F5C518;font-size:26px;font-weight:800;letter-spacing:6px;margin-bottom:22px}'
+        '.ttl{color:#fff;font-size:52px;font-weight:800;line-height:1.3}'
+        '.u{width:96px;height:8px;background:#F5C518;border-radius:4px;margin-top:28px}'
+        '</style><div class="w"><div class="tag">POINT</div><div class="ttl">' + disp +
+        '</div><div class="u"></div></div>'
+    )
+    b = p.chromium.launch(headless=True)
+    try:
+        pg = b.new_page(viewport={"width": 1280, "height": 420}, device_scale_factor=2)
+        pg.set_content(html, wait_until="load")
+        time.sleep(0.4)
+        pg.screenshot(path=str(out))
+    finally:
+        b.close()
+    return out
+
+
+def insert_image(page, img_path):
+    """本文カーソル位置に画像を挿入。失敗しても記事作成は続行。"""
     try:
         btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
         btn.click()
@@ -257,6 +289,20 @@ def run(mode, dry_run=False):
             except Exception:
                 eyecatch = None
 
+        # 離脱防止の途中バナー: 番号付きセクション見出し（「1. …」等）の先頭3つに自動生成
+        banners = {}
+        if len(body) >= 1500:
+            picked = 0
+            for ln in body.splitlines():
+                m = re.match(r"^#{2,6}\s+(\d+[.．].*)", ln.strip())
+                if m and picked < 3:
+                    htxt = m.group(1).strip()
+                    try:
+                        banners[htxt] = gen_banner(p, htxt)
+                        picked += 1
+                    except Exception:
+                        pass
+
         browser, page = get_page(p)
         try:
             page.goto(NEW_URL, wait_until="domcontentloaded")
@@ -284,7 +330,7 @@ def run(mode, dry_run=False):
             time.sleep(0.5)
             eyecatch_ok = False
             if eyecatch:
-                eyecatch_ok = try_set_eyecatch(page, eyecatch)
+                eyecatch_ok = insert_image(page, eyecatch)
             body_in = body
             if visibility == "paid":
                 marker = meta.get("paywall_marker", "")
@@ -292,7 +338,7 @@ def run(mode, dry_run=False):
                     body_in = body.split(marker, 1)[0] + \
                         "\n\n（※ここから先は有料。価格" + meta.get("price", "") + \
                         "円と有料ラインは人間が設定して公開）"
-            enter_body(page, body_in)
+            enter_body(page, body_in, banners)
             time.sleep(random.uniform(1.5, 3))
 
             if dry_run:
