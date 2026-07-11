@@ -127,26 +127,74 @@ def gen_eyecatch(p, title, sub):
     return out
 
 
-def apply_heading(page, n_chars):
-    """直前に入力した見出し行（n_chars文字）だけを選択し、noteの『見出し』ボタンで整形。
-    Home/End は文書全体を選ぶ挙動があり本文を壊すため、Shift+←を文字数ぶん送って厳密に選択する。"""
-    if n_chars <= 0:
-        return False
-    kb = page.keyboard
+def _caret_block_rect(page):
+    """現在のキャレットがあるブロック要素の中心座標を返す（トリプルクリック用）。"""
     try:
+        return page.evaluate(
+            """() => {
+                const sel = window.getSelection();
+                if (!sel || sel.rangeCount === 0) return null;
+                let node = sel.anchorNode;
+                if (node && node.nodeType === 3) node = node.parentElement;
+                while (node && node.nodeType === 1 &&
+                       getComputedStyle(node).display === 'inline')
+                    node = node.parentElement;
+                if (!node || node.nodeType !== 1) return null;
+                const r = node.getBoundingClientRect();
+                if (r.width < 2 || r.height < 2) return null;
+                return {x: r.left + r.width / 2, y: r.top + r.height / 2};
+            }"""
+        )
+    except Exception:
+        return None
+
+
+def _click_heading_button(page):
+    for sel in ('button:text-is("見出し")', 'button:has-text("見出し")',
+                '[aria-label="見出し"]', '[aria-label*="見出し"]'):
+        try:
+            page.click(sel, timeout=1500)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def apply_heading(page, n_chars=0):
+    """直前に入力した見出し行を note の『見出し』整形に変える。
+    noteのバブルツールバーは*マウス選択*でしか出ない（キーボード選択では出ない）ため、
+    トリプルクリックで見出し行を丸ごと選択してからツールバーの『見出し』を押す。"""
+    kb = page.keyboard
+    # 1) 本命: マウスのトリプルクリックで行選択 → バブルメニューの『見出し』
+    try:
+        rect = _caret_block_rect(page)
+        if rect:
+            page.mouse.click(rect["x"], rect["y"], click_count=3)
+            time.sleep(0.6)
+            if _click_heading_button(page):
+                time.sleep(0.3)
+                kb.press("End")  # 選択解除・行末へ
+                return True
+    except Exception:
+        pass
+    # 2) フォールバック: キーボードで文字数ぶん選択（従来手法）
+    try:
+        if n_chars <= 0:
+            return False
         for _ in range(n_chars):
             kb.press("Shift+ArrowLeft")
-        time.sleep(0.5)
-        page.click('button:text-is("見出し")', timeout=2500)
-        time.sleep(0.3)
+        time.sleep(0.4)
+        if _click_heading_button(page):
+            time.sleep(0.3)
+            kb.press("ArrowRight")
+            return True
         kb.press("ArrowRight")  # 選択解除・行末へ
-        return True
     except Exception:
         try:
             kb.press("ArrowRight")
         except Exception:
             pass
-        return False
+    return False
 
 
 # ---- 本文を note の見出し・段落に整形して入力（bannersがあれば見出し前に画像挿入） ----
@@ -180,10 +228,12 @@ def enter_body(page, md, banners=None):
         if hm:  # 見出し: （バナー対象なら画像挿入→）文字入力→選択→note『見出し』ボタンで整形
             htxt = hm.group(2).strip()
             if htxt in banners:
-                insert_image(page, banners[htxt])  # 離脱防止の途中バナー
+                ok = insert_image(page, banners[htxt])  # 離脱防止の途中バナー
+                print(f"[info] バナー挿入 {'OK' if ok else 'NG'}: {htxt[:16]}")
             kb.type(htxt, delay=8)
-            time.sleep(0.2)
-            apply_heading(page, len(htxt))
+            time.sleep(0.3)
+            hok = apply_heading(page, len(htxt))
+            print(f"[info] 見出し整形 {'OK' if hok else 'NG'}: {htxt[:16]}")
         elif re.match(r"^\s*---\s*$", head):  # 区切り線
             kb.type("---")
         elif re.match(r"^\s*[・\-*]\s+", head):  # 箇条書き
@@ -328,8 +378,9 @@ def run(mode, dry_run=False):
                     try:
                         banners[htxt] = gen_banner(p, htxt)
                         picked += 1
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[warn] バナー生成失敗: {e}")
+        print(f"[info] セクションバナー生成: {len(banners)}枚 / 本文{len(body)}字")
 
         browser, page = get_page(p)
         try:
