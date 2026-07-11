@@ -280,8 +280,21 @@ def gen_banner(p, text):
     return out
 
 
+def _editor_img_count(page):
+    """エディタ領域内の画像数を返す（挿入成否の判定用）。取得失敗は -1。"""
+    try:
+        return page.evaluate(
+            "() => (document.querySelector('.ProseMirror') || document.body)"
+            ".querySelectorAll('img').length"
+        )
+    except Exception:
+        return -1
+
+
 def insert_image(page, img_path):
-    """本文カーソル位置に画像を挿入。失敗しても記事作成は続行。"""
+    """本文カーソル位置に画像を挿入。挿入成否は『エディタ内の画像が増えたか』で判定。
+    本文中バナー(ProseMirror内figure)はダイアログの閉挙動が出ないため、画像数増加を主判定にする。"""
+    before = _editor_img_count(page)
     try:
         btn = find(page, SEL_EYECATCH_BTN, timeout=8000)
         btn.click()
@@ -294,45 +307,56 @@ def insert_image(page, img_path):
             pass
         fi = page.wait_for_selector('input[type="file"]', timeout=6000, state="attached")
         fi.set_input_files(str(img_path))
-        time.sleep(3)  # 位置調整ダイアログが出るのを待つ
+        time.sleep(3)  # アップロード＆位置調整ダイアログを待つ
 
-        # ダイアログの「保存」を確実に押す（右上の『下書き保存』を誤認しないよう複数手段で）
-        saved = False
+        # ダイアログがあれば「保存」/Enter で確定（本文中画像は無い場合もある）。
+        # 成功判定 = 画像が増えた OR ダイアログ（キャンセル）が消えた。
         for meth in ("role", "textis", "enter"):
             try:
                 if meth == "role":
-                    page.get_by_role("button", name="保存", exact=True).click(timeout=3500)
+                    page.get_by_role("button", name="保存", exact=True).click(timeout=2500)
                 elif meth == "textis":
-                    page.click('button:text-is("保存")', timeout=3000)
+                    page.click('button:text-is("保存")', timeout=2000)
                 else:
                     page.keyboard.press("Enter")
-                time.sleep(2)
             except Exception:
                 pass
-            # ダイアログが閉じた（キャンセルボタンが消えた）ら成功
+            time.sleep(1.3)
+            grew = before >= 0 and _editor_img_count(page) > before
+            closed = False
             try:
-                if page.locator('button:has-text("キャンセル")').count() == 0:
-                    saved = True
-                    break
+                closed = page.locator('button:has-text("キャンセル")').count() == 0
             except Exception:
                 pass
-        if not saved:
-            save_error(page, "img-save-fail")
-            # 詰まり防止: ダイアログをキャンセルして閉じ、画像なしで続行
-            try:
-                page.click('button:has-text("キャンセル")', timeout=2000)
-                time.sleep(1)
-            except Exception:
-                pass
-            return False
+            if grew or closed:
+                try:
+                    page.keyboard.press("End")
+                    page.keyboard.press("Enter")
+                except Exception:
+                    pass
+                return True
+
+        # 失敗: 可視ボタンをログに出して原因特定 → ダイアログを閉じて続行
         try:
-            page.keyboard.press("End")
-            page.keyboard.press("Enter")
+            btns = page.evaluate(
+                "() => Array.from(document.querySelectorAll('button'))"
+                ".filter(b => b.offsetParent)"
+                ".map(b => (b.innerText || b.getAttribute('aria-label') || '').trim())"
+                ".filter(Boolean).slice(0, 24)"
+            )
+            print(f"[warn] 画像挿入を確定できず。可視ボタン: {btns}")
         except Exception:
             pass
-        return True
-    except Exception:
-        save_error(page, "eyecatch-fail")
+        save_error(page, "img-save-fail")
+        try:
+            page.click('button:has-text("キャンセル")', timeout=2000)
+            time.sleep(1)
+        except Exception:
+            pass
+        return False
+    except Exception as e:
+        print(f"[warn] insert_image 例外: {e}")
+        save_error(page, "img-insert-fail")
         try:
             page.click('button:has-text("キャンセル")', timeout=2000)
         except Exception:
