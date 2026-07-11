@@ -133,14 +133,14 @@ def _submit_tweet(page):
     captured = {"url": ""}
 
     def posted():
-        """投稿完了（成功トースト or 作成モーダルが閉じた）なら True。URLも拾えれば控える。"""
-        try:
-            if page.locator('[data-testid="toast"]').count() > 0:
-                if not captured["url"]:
-                    captured["url"] = _grab_toast_url(page)
-                return True
-        except Exception:
-            pass
+        """投稿完了なら True。判定は『成功トーストのstatusリンク出現』or『作成UI(tweetButton)が消えた』のみ。
+        ※ data-testid=toast の空コンテナは通知が無くても常設されており誤検知の元なので、存在チェックには使わない。"""
+        if not captured["url"]:
+            u = _grab_toast_url(page)  # 成功トーストに出る /status/ リンク（本物の成功シグナル）
+            if u:
+                captured["url"] = u
+        if captured["url"]:
+            return True
         return not _compose_open(page)
 
     def wait_posted(secs=10):
