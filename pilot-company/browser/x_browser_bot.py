@@ -169,6 +169,33 @@ def _submit_tweet(page):
     return posted(), captured["url"]
 
 
+def _capture_tweet_url(page):
+    """投稿直後にURLを取得する。①トーストの「表示」リンクを数秒ポーリング（消える前に拾う）
+    ②自分のプロフィール(返信含む)の最新statusリンク。取れなければ ""。"""
+    # ① トーストのリンクを最大8秒ポーリング
+    for _ in range(8):
+        u = _grab_toast_url(page)
+        if u:
+            return u
+        time.sleep(1.0)
+    # ② プロフィールのハンドルを取得 → 最新投稿の status リンク
+    try:
+        prof = page.query_selector('[data-testid="AppTabBar_Profile_Link"]')
+        href = prof.get_attribute("href") if prof else ""
+        handle = href.strip("/").split("/")[0] if href else ""
+        if handle:
+            page.goto(f"https://x.com/{handle}/with_replies", wait_until="domcontentloaded")
+            time.sleep(3)
+            for a in page.query_selector_all(f'article a[href*="/{handle}/status/"]'):
+                h = a.get_attribute("href") or ""
+                m = re.search(rf"/{re.escape(handle)}/status/(\d+)", h)
+                if m:
+                    return f"https://x.com/{handle}/status/{m.group(1)}"
+    except Exception:
+        pass
+    return ""
+
+
 def cmd_post(dry_run=False):
     from playwright.sync_api import sync_playwright
 
@@ -210,20 +237,16 @@ def cmd_post(dry_run=False):
                 sys.exit("error: 最終の投稿ボタンを押せませんでした（キューに残します）。"
                          f"スクショ確認: {ERR_DIR}")
 
-            # URLが未取得なら、トースト→自分のプロフィール最新投稿の順で拾い直す
+            # URLが未取得なら、トースト→プロフィール最新投稿の順で拾い直す
             if not tweet_url:
-                try:
-                    a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=6000)
-                    tweet_url = "https://x.com" + a.get_attribute("href")
-                except Exception:
-                    try:
-                        page.click('[data-testid="AppTabBar_Profile_Link"]')
-                        a = page.wait_for_selector('article a[href*="/status/"]', timeout=15000)
-                        tweet_url = "https://x.com" + a.get_attribute("href")
-                    except Exception:
-                        pass
+                tweet_url = _capture_tweet_url(page)
             m = re.search(r"/status/(\d+)", tweet_url or "")
             tweet_id = m.group(1) if m else f"unknown-{int(time.time())}"
+            if not m:
+                # 投稿自体は成功しているがURLだけ取れなかった。診断用にスクショを残す。
+                save_error(page, "post-url-unknown")
+                print("[warn] 投稿は成功しましたが投稿URLを取得できませんでした"
+                      "（タイムラインで表示確認してください）")
 
             POST_LOG.parent.mkdir(parents=True, exist_ok=True)
             with open(POST_LOG, "a", newline="", encoding="utf-8") as f:
