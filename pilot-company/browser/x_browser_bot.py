@@ -104,6 +104,65 @@ def cmd_login():
     print("ログイン情報をプロファイルに保存しました:", PROFILE)
 
 
+def _posted_signal(page):
+    """投稿が完了したと判断できる兆候（トースト表示 or 作成画面から離脱）があれば True。"""
+    try:
+        if page.locator('[data-testid="toast"]').count() > 0:
+            return True
+    except Exception:
+        pass
+    try:
+        if "/compose/" not in page.url:  # 投稿成功で /home 等へ遷移する
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _submit_tweet(page):
+    """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに成否を検証してから次の手段へ。
+    手段: ①投稿ボタン（通常/インライン） ②Cmd+Enter（Mac） ③Ctrl+Enter。成功で True。"""
+    def wait_gone(secs=8):
+        for _ in range(secs):
+            time.sleep(1.0)
+            if _posted_signal(page):
+                return True
+        return _posted_signal(page)
+
+    # ① 投稿ボタンをクリック（通常＝tweetButton / インライン＝tweetButtonInline）
+    for sel in ('[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]'):
+        if _posted_signal(page):
+            return True
+        try:
+            btn = page.locator(sel).first
+            if btn.count() > 0:
+                try:
+                    btn.click(timeout=3000)
+                except Exception:
+                    btn.click(timeout=3000, force=True)  # オーバーレイ対策で強制クリック
+                if wait_gone():
+                    return True
+        except Exception:
+            pass
+    # ② Cmd+Enter（Xの公式ショートカット。Macでは Meta=⌘）
+    if not _posted_signal(page):
+        try:
+            page.keyboard.press("Meta+Enter")
+        except Exception:
+            pass
+        if wait_gone():
+            return True
+    # ③ Ctrl+Enter（Mac以外・フォールバック）
+    if not _posted_signal(page):
+        try:
+            page.keyboard.press("Control+Enter")
+        except Exception:
+            pass
+        if wait_gone():
+            return True
+    return _posted_signal(page)
+
+
 def cmd_post(dry_run=False):
     from playwright.sync_api import sync_playwright
 
@@ -137,11 +196,16 @@ def cmd_post(dry_run=False):
                 save_error(page, "dryrun")
                 cleanup()
                 return
-            page.click('[data-testid="tweetButton"]')
+
+            # 最終POSTを確実に押す（押せなければキューを保持して中断＝投稿済み誤記録を防ぐ）
+            if not _submit_tweet(page):
+                save_error(page, "post-submit-fail")
+                sys.exit("error: 最終の投稿ボタンを押せませんでした（キューに残します）。"
+                         f"スクショ確認: {ERR_DIR}")
 
             tweet_url = ""
             try:
-                a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=15000)
+                a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=8000)
                 tweet_url = "https://x.com" + a.get_attribute("href")
             except Exception:
                 try:
