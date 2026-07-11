@@ -104,63 +104,69 @@ def cmd_login():
     print("ログイン情報をプロファイルに保存しました:", PROFILE)
 
 
-def _posted_signal(page):
-    """投稿が完了したと判断できる兆候（トースト表示 or 作成画面から離脱）があれば True。"""
+def _grab_toast_url(page):
+    """投稿直後のトーストに出る「表示」リンクから投稿URLを拾う（消える前に即取得）。"""
     try:
-        if page.locator('[data-testid="toast"]').count() > 0:
-            return True
+        a = page.query_selector('[data-testid="toast"] a[href*="/status/"]')
+        if a:
+            href = a.get_attribute("href") or ""
+            if "/status/" in href:
+                return "https://x.com" + href
     except Exception:
         pass
+    return ""
+
+
+def _compose_open(page):
+    """投稿作成モーダルがまだ開いているか（＝未投稿）。モーダルのPostボタン tweetButton の有無で判定。
+    ※ホームのインライン入力欄は tweetButtonInline で別物なので誤検知しない。"""
     try:
-        if "/compose/" not in page.url:  # 投稿成功で /home 等へ遷移する
-            return True
+        return page.locator('[data-testid="tweetButton"]').count() > 0
     except Exception:
-        pass
-    return False
+        return False
 
 
 def _submit_tweet(page):
-    """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに成否を検証してから次の手段へ。
-    手段: ①投稿ボタン（通常/インライン） ②Cmd+Enter（Mac） ③Ctrl+Enter。成功で True。"""
-    def wait_gone(secs=8):
+    """最終の投稿を確実に送信する。二重投稿を避けるため、1手ごとに『モーダルが閉じたか』を検証してから次へ。
+    手段: ①Postボタン ②Postボタン強制クリック ③Cmd+Enter ④Ctrl+Enter。
+    戻り値: (posted: bool, url: str)。urlはトーストから拾えた場合のみ（拾えなければ""）。"""
+    captured = {"url": ""}
+
+    def posted():
+        """投稿完了（成功トースト or 作成モーダルが閉じた）なら True。URLも拾えれば控える。"""
+        try:
+            if page.locator('[data-testid="toast"]').count() > 0:
+                if not captured["url"]:
+                    captured["url"] = _grab_toast_url(page)
+                return True
+        except Exception:
+            pass
+        return not _compose_open(page)
+
+    def wait_posted(secs=10):
         for _ in range(secs):
             time.sleep(1.0)
-            if _posted_signal(page):
+            if posted():
                 return True
-        return _posted_signal(page)
+        return posted()
 
-    # ① 投稿ボタンをクリック（通常＝tweetButton / インライン＝tweetButtonInline）
-    for sel in ('[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]'):
-        if _posted_signal(page):
-            return True
-        try:
-            btn = page.locator(sel).first
-            if btn.count() > 0:
-                try:
-                    btn.click(timeout=3000)
-                except Exception:
-                    btn.click(timeout=3000, force=True)  # オーバーレイ対策で強制クリック
-                if wait_gone():
-                    return True
-        except Exception:
-            pass
-    # ② Cmd+Enter（Xの公式ショートカット。Macでは Meta=⌘）
-    if not _posted_signal(page):
-        try:
-            page.keyboard.press("Meta+Enter")
-        except Exception:
-            pass
-        if wait_gone():
-            return True
-    # ③ Ctrl+Enter（Mac以外・フォールバック）
-    if not _posted_signal(page):
-        try:
-            page.keyboard.press("Control+Enter")
-        except Exception:
-            pass
-        if wait_gone():
-            return True
-    return _posted_signal(page)
+    methods = (
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000),
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000, force=True),
+        lambda: page.keyboard.press("Meta+Enter"),   # Xの公式ショートカット（Mac ⌘+Enter）
+        lambda: page.keyboard.press("Control+Enter"),  # Mac以外フォールバック
+    )
+    for run in methods:
+        if posted():
+            return True, captured["url"]
+        if _compose_open(page):
+            try:
+                run()
+            except Exception:
+                pass
+            if wait_posted():
+                return True, captured["url"]
+    return posted(), captured["url"]
 
 
 def cmd_post(dry_run=False):
@@ -198,22 +204,24 @@ def cmd_post(dry_run=False):
                 return
 
             # 最終POSTを確実に押す（押せなければキューを保持して中断＝投稿済み誤記録を防ぐ）
-            if not _submit_tweet(page):
+            posted, tweet_url = _submit_tweet(page)
+            if not posted:
                 save_error(page, "post-submit-fail")
                 sys.exit("error: 最終の投稿ボタンを押せませんでした（キューに残します）。"
                          f"スクショ確認: {ERR_DIR}")
 
-            tweet_url = ""
-            try:
-                a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=8000)
-                tweet_url = "https://x.com" + a.get_attribute("href")
-            except Exception:
+            # URLが未取得なら、トースト→自分のプロフィール最新投稿の順で拾い直す
+            if not tweet_url:
                 try:
-                    page.click('[data-testid="AppTabBar_Profile_Link"]')
-                    a = page.wait_for_selector('article a[href*="/status/"]', timeout=15000)
+                    a = page.wait_for_selector('[data-testid="toast"] a[href*="/status/"]', timeout=6000)
                     tweet_url = "https://x.com" + a.get_attribute("href")
                 except Exception:
-                    pass
+                    try:
+                        page.click('[data-testid="AppTabBar_Profile_Link"]')
+                        a = page.wait_for_selector('article a[href*="/status/"]', timeout=15000)
+                        tweet_url = "https://x.com" + a.get_attribute("href")
+                    except Exception:
+                        pass
             m = re.search(r"/status/(\d+)", tweet_url or "")
             tweet_id = m.group(1) if m else f"unknown-{int(time.time())}"
 
