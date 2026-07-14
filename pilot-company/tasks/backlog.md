@@ -19,7 +19,7 @@
 - [完了] note立ち上げ設計: 名前3案・プロフィール文（drafts/note_profile.md、2026-07-09 sho）
 - [完了] 商品P1: テンプレート本体（20職種＋ガイド8章＋NGチェック）の執筆（2026-07-13 kotone）
 - [TODO] 入口「お試し版」（P1から3職種＋NGチェック抜粋）を ¥500 で作成 @kotone
-- [TODO] 商品P1の販売ページ文面（ローンチ価格 ¥980 で作成。段階値上げは PRICING_STRATEGY.md 参照。2026-07-09 HARU承認済み） @kotone
+- [完了] 商品P1の販売ページ文面の作成（2026-07-14 kotone・haruto検収合格） @kotone
 - [TODO] P2/P3/バンドルの企画着手（P1ローンチ後、実績を見て順次。価格は PRICING_STRATEGY.md 確定済み） @kotone
 
 ## 今週のタスク（W29）
@@ -32,6 +32,7 @@
 - [TODO] P1ローンチ（販売ページ作成・note公開） @kotone
 - [完了] X投稿2本（ノウハウ系・07-13分）ドラフト作成（2026-07-13 sho・haruto検収合格）
 - [完了] note無料記事2本目「求人の職種名の付け方」ドラフト作成（2026-07-13 sho・haruto検収合格）
+- [完了] note無料記事3本目「仕事内容は1日の流れで書く」ドラフト作成（2026-07-14 sho・haruto検収合格）
 
 ## Phase 2 予定（Xループ安定後に着手）
 
@@ -44,11 +45,13 @@
 
 - [承認待ち] X投稿ドラフト drafts/x_2026-07-14_01.txt — 「応募から何時間で連絡してますか？1営業日以内に電話で面接率が変わる」 @sho
 - [承認待ち] X投稿ドラフト drafts/x_2026-07-14_02.txt — 「入社前に現場を見せましたか？現場見学1回で早期離職防止」 @sho
+- [承認待ち] P1販売ページ文面 pilot-company/products/P1_sales_page.md note有料記事として公開 — ¥980ローンチ @kotone
 
 ## 投稿予約・公開済み
 
 - [note公開予約] pilot-company/tasks/note_queue/posted/note_article_01.md — 「なぜ建設業の求人は応募が来ないのか」（note-bot公開済み）
 - [note公開予約] pilot-company/tasks/note_queue/note_article_02.md — 「求人の職種名の付け方」（note-bot自動公開予定）
+- [note公開予約] pilot-company/tasks/note_queue/note_article_03.md — 「仕事内容は1日の流れで書く」（note-bot自動公開予定）
 - [投稿予約] tasks/x_queue/x_2026-07-13_01.txt — 「作業員募集で求人出してませんか？職種名を変えるだけでクリック率が変わる」（ローカルボット投稿予定）
 - [投稿予約] tasks/x_queue/x_2026-07-13_02.txt — 「求人票に社会保険完備としか書いてない会社、多い」（ローカルボット13:30投稿予定）
 - [公開済み] tasks/x_queue/posted/x_2026-07-09_01.txt — 「経験者優遇と書くほど応募が減る」
