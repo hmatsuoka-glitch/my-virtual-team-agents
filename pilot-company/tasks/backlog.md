@@ -40,6 +40,18 @@
 - [完了] X投稿2本（ノウハウ系・07-19分）ドラフト作成（2026-07-17 sho・haruto検収合格）
 - [完了] note無料記事6本目「求人票の写真・画像の選び方」ドラフト作成（2026-07-17 sho・haruto検収合格）
 
+## 来週のタスク（W30）
+
+- [TODO] P1ローンチ実行（HARU承認後、note有料記事として公開 ¥980） @kotone
+- [TODO] お試し版ローンチ実行（HARU承認後、note有料記事として公開 ¥500） @kotone
+- [TODO] X投稿の型別A/Bテスト設計：「逆説フック型」vs「ストレートTips型」を意図的に分けてドラフト作成 @sho
+- [TODO] X投稿へのハッシュタグA/Bテスト：半分の投稿に #建設業 #求人 #採用 を追加 @sho
+- [TODO] noteダッシュボードからのビュー数取得方法の確認 @HARU
+- [TODO] X APIキーの設定確認（fetch_x_metrics.pyが動作するように） @HARU
+- [TODO] X投稿ドラフト07-21〜07-24分の作成（毎日2本×4日=8本） @sho
+- [TODO] note無料記事7本目のドラフト作成 @sho
+- [TODO] 競合C6（マサ氏）のnote記事の詳細確認（無料/有料・スキ数・記事構成） @rui
+
 ## Phase 2 予定（Xループ安定後に着手）
 
 - [TODO] X APIへの移行: developer.x.com で従量課金登録・キー4種を環境変数へ → ローカルXボット退役（手順は HARU_MANUAL.md / browser/README.md） @HARU
