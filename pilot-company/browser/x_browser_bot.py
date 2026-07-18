@@ -196,6 +196,71 @@ def _capture_tweet_url(page):
     return ""
 
 
+def parse_draft(text):
+    """X下書きから本文と、自己リプ用のnote URLを分離する。
+    行 'NOTE_REPLY: <url>' があればそのURLを返し、本文からは除去する（後方互換: 無ければ""）。"""
+    note_url = ""
+    kept = []
+    for ln in text.splitlines():
+        m = re.match(r"^\s*NOTE_REPLY:\s*(\S+)\s*$", ln)
+        if m:
+            note_url = m.group(1)
+            continue
+        kept.append(ln)
+    return "\n".join(kept).strip(), note_url
+
+
+def _reply_textarea_empty(page):
+    """返信の入力欄が空（＝送信され初期化された）なら True。"""
+    try:
+        t = page.locator('[data-testid="tweetTextarea_0"]').first
+        if t.count() == 0:
+            return True
+        return (t.inner_text() or "").strip() == ""
+    except Exception:
+        return False
+
+
+def _submit_reply(page):
+    """返信を送信する。返信の入力欄が空に戻れば成功。二重送信を避けつつ複数手段で押し切る。"""
+    methods = (
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000),
+        lambda: page.locator('[data-testid="tweetButtonInline"]').first.click(timeout=3000),
+        lambda: page.locator('[data-testid="tweetButton"]').first.click(timeout=3000, force=True),
+        lambda: page.keyboard.press("Meta+Enter"),
+        lambda: page.keyboard.press("Control+Enter"),
+    )
+    for run in methods:
+        if _reply_textarea_empty(page):
+            return True
+        try:
+            run()
+        except Exception:
+            pass
+        for _ in range(6):
+            time.sleep(1.0)
+            if _reply_textarea_empty(page):
+                return True
+    return _reply_textarea_empty(page)
+
+
+def _reply_with_note(page, tweet_url, note_url,
+                     lead="くわしい書き方はこちらにまとめています👇"):
+    """投稿した自分のツイートに、note記事URLを自己リプする（本文のリーチを守る導線）。"""
+    try:
+        page.goto(tweet_url, wait_until="domcontentloaded")
+        time.sleep(random.uniform(2, 4))
+        box = page.wait_for_selector('[data-testid="tweetTextarea_0"]', timeout=15000)
+        box.click()
+        for ch in f"{lead}\n{note_url}":
+            page.keyboard.type(ch, delay=random.uniform(20, 60))
+        time.sleep(random.uniform(1.0, 2.0))
+        return _submit_reply(page)
+    except Exception:
+        save_error(page, "reply-note-fail")
+        return False
+
+
 def cmd_post(dry_run=False):
     from playwright.sync_api import sync_playwright
 
@@ -207,7 +272,8 @@ def cmd_post(dry_run=False):
         print("投稿予約キュー (tasks/x_queue/) は空です")
         return
     draft = drafts[0]
-    text = draft.read_text(encoding="utf-8").strip()
+    raw = draft.read_text(encoding="utf-8").strip()
+    text, note_url = parse_draft(raw)  # note_url は自己リプ用（無ければ ""）
     if not text or weighted_length(text) > 280:
         sys.exit(f"error: {draft.name} が空か文字数超過です。修正が必要（キューに残します）")
 
@@ -254,6 +320,15 @@ def cmd_post(dry_run=False):
                     datetime.datetime.now().isoformat(timespec="seconds"),
                     tweet_id, str(draft.relative_to(PILOT)), text[:50].replace("\n", " "),
                 ])
+            # 動線: note記事URLがあれば自己リプで貼る（本文リーチを守りつつクリック導線を作る）
+            if note_url:
+                if tweet_url:
+                    ok = _reply_with_note(page, tweet_url, note_url)
+                    print(f"[info] note誘導リプ: {'OK' if ok else 'NG'} {note_url}")
+                else:
+                    print("[warn] 投稿URL未取得のためnote誘導リプをスキップしました "
+                          f"（note: {note_url}）")
+
             POSTED.mkdir(parents=True, exist_ok=True)
             draft.rename(POSTED / draft.name)
             print(f"posted: {tweet_url or tweet_id}")
