@@ -9,7 +9,8 @@
 | 項目 | 値 | 備考 |
 |------|----|----|
 | Xハンドル | `@Jean_Valjean006` | ブランド運用としては将来 `@genba_saiyo` 等が理想（任意） |
-| note プロフィールURL | `https://note.com/＿＿＿＿` | **HARUが実URLを記入**（bio・記事相互リンクで使う） |
+| note プロフィールURL | `https://note.com/moral_jaguar124` | bio・記事相互リンクで使う |
+| 1本目 note記事URL | `https://note.com/moral_jaguar124/n/n9c8ec94b4e31` | 「なぜ建設業の求人は応募が来ないのか」 |
 | ブランド表示名 | 現場の採用ノート | X表示名・noteクリエイター名で一致 |
 
 ## 全体像
@@ -49,7 +50,7 @@ X → プロフィールを編集：
 - 下書き例（`tasks/x_queue/xxx.txt`）:
   ```
   「経験者優遇」と書くほど応募が減るのは、建設業の求人でよくある落とし穴です。……職種別の書き方をnoteで整理中です。#建設業 #採用
-  NOTE_REPLY: https://note.com/＿＿＿＿/n/n9c8ec94b4e31
+  NOTE_REPLY: https://note.com/moral_jaguar124/n/n9c8ec94b4e31
   ```
 - 投稿URLが取得できなかった回はリプをスキップ（本体投稿は成功）。次回のURL取得改善で自動化。
 
