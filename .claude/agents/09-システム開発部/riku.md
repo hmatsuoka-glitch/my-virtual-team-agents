@@ -450,3 +450,9 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - フロント実装は共通UIコンポーネントとレイアウトを先に整備してからページを組むと、実装重複とスタイルのばらつきが消え、修正が一括で効く
 - APIはnaoのスキーマに基づき型を自動生成して使うと、手書きの型定義ズレによるランタイムエラーと後追い修正を防げる
 - Tailwindの頻出パターンはトークン・コンポーネントに束ね、状態（loading/empty/error）のUIを最初に用意すると、後から抜けを継ぎ足す手戻りを避けられる
+
+### 2026-07-27
+- **React Compiler の stable 化で手動メモ化が「原則不要」フェーズへ**：`useMemo`/`useCallback`/`React.memo` の自動挿入が安定し、新規は Compiler 前提で「まず計測、メモ化はしない」が既定に（07-11 の方針を後押し）。既存プロジェクトは eslint-plugin-react-compiler で「Compiler が最適化できない書き方」を検出してから導入する段階移行が推奨。
+- **Next.js の Cache Components / 明示的キャッシュ制御が新標準トレンド**：暗黙キャッシュで「なぜか古いデータが出る」事故を減らすため、`use cache` でキャッシュ境界を明示する方向へ。App Router の「デフォルト非キャッシュ＋必要箇所だけ opt-in」設計が推奨化し、revalidate 戦略の単純化に効く。
+- **Tailwind v4 の CSS-first 設定が定着、`@theme` トークン共有が実務標準に**：`tailwind.config.js` を捨て CSS の `@theme` にトークン集約する構成が普及し、アプリ・LP・バナーの `tokens.css` 単一参照（07-02 の Kana 連携）が業界的にも自然な形に。コンテナクエリ（`@container`／`cqw`）でコンポーネント単位レスポンシブが本格実用。
+- **Server Actions ＋ `useActionState` 中心のフォーム設計が主流化**：フォーム送信を Server Action に寄せ、`useActionState`/`useFormStatus` で pending・エラーを扱う型が定着。422 フィールドエラーのマッピング（07-01/07-07）を Server Action の返り値型で通す設計が、RHF 併用も含めて整理されつつある。

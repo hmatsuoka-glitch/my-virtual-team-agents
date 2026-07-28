@@ -504,3 +504,9 @@ STEP 6: 実装完了報告
 - CI/CDは「lint→型チェック→テスト→ビルド→デプロイ」を段階ゲート化し、前段が落ちたら止める構成にすると、壊れたコードが本番へ流れる高コストな事故を防げる
 - 環境構築はIaC/設定ファイルでコード化して使い回すと、案件ごとに手作業で立てる非効率と設定漏れを消せる：再現性が最大の時短
 - デプロイはプレビュー環境での確認を必須ゲートにし、ロールバック手順を事前定義しておくと、本番障害時の復旧が探索作業にならず数分で戻せる
+
+### 2026-07-27
+- **Vercel Fluid Compute の「Active CPU 課金」が 2026 の標準に**：関数がアイドル（DB/外部 API の応答待ち）中は CPU 課金されず、実 CPU 稼働時間だけ課金される方式。外部 API 待ちが多い採用系 API はサーバーレス費用が実測 40-60% 減の報告が増加。既存プロジェクトは runtime 切替だけで移行でき、コスト棚卸しの第一手として検討推奨。
+- **GitHub Actions の Artifact Attestations＋Immutable Actions が supply-chain 対策の標準化トレンド**：`actions/attest-build-provenance` で成果物に SLSA Build L3 相当の署名を付与し「このコミット・このワークフロー由来」を検証可能化。Actions をタグでなく digest 固定で参照する運用が推奨化し、`tj-actions` 型の改ざん事件を機械防止。Kuu のパイプラインへ attestation 検証ゲート追加を検討。
+- **Node.js の組込み機能拡充で CI 依存が減少トレンド**：`node --run`（npm 経由不要のスクリプト実行）・組込み `--env-file`（dotenv 不要）・組込み test runner が実運用水準に。lint/format も Biome 一本化で ESLint＋Prettier の二重設定を畳む流れが加速し、CI の cold インストール時間短縮に効く。
+- **OpenTelemetry の semantic conventions 安定化でベンダーロックイン回避が現実解に**：HTTP/DB/messaging の属性命名が stable 化し、Grafana/Datadog/BetterStack 間の計測データ移植コストが低下。「まず OTel で出力、バックエンドは後から選ぶ」設計がクライアント提案の訴求軸として通しやすくなった。

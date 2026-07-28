@@ -631,3 +631,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - Next.js実装は共通レイアウト・共通コンポーネントを最初に組んでからページを量産すると、後からの一括修正が効き、コピペ実装のメンテ地獄を避けられる
 - アニメーションは「1つの共通ユーティリティ（フェードイン/スライド）に集約」して呼び出す方式にすると、個別実装の乱立と挙動のバラつきを防げて調整が一括で済む
 - Tailwindは頻出の組み合わせを@applyやコンポーネント化で束ね、マジックナンバーを設計トークン参照に寄せると、デザイン変更時の修正箇所が1点に集約されて速い
+
+### 2026-07-27
+- **React 19 の `useActionState`/`useOptimistic`/`use` が実務投入**：フォーム実装が Server Action と直結して簡潔化し、pending・エラー・楽観更新を追加ライブラリなしで書ける。既存の「Zod＋RHF＋Server Action」テンプレを 19 の新フック前提に更新すると記述量と再レンダリングを削減できる
+- **Tailwind CSS v4 の CSS-first 設定（`@theme` でトークン定義）が定着**：`tailwind.config.js` を廃して CSS 側にトークンを寄せる構成が主流化。Hana の tokens.json → `@theme` 注入に一本化でき、任意値 `[#hex]` 直書き禁止の運用とも相性が良い
+- **View Transitions API（SPA/MPA 両対応）がブラウザ標準化**：ページ・要素遷移のアニメを JS 最小で実装可能に。Framer Motion 依存を一部置換でき、共通アニメユーティリティに `::view-transition` を加えると First Load JS の削減にもつながる
+- **Next.js 15.3+ の `next build --turbopack` が stable 化**：本番ビルドも高速化し、開発の Turbopack と本番の挙動差が縮む。Kaito のデプロイ側と Node メジャー固定＋Turbopack ビルドを揃えると「CI 緑・本番だけ落ちる」差分をさらに減らせる
