@@ -456,3 +456,8 @@ Next.js (App Router) を用いた UI 実装・SEO 最適化・パフォーマン
 - **Next.js の Cache Components / 明示的キャッシュ制御が新標準トレンド**：暗黙キャッシュで「なぜか古いデータが出る」事故を減らすため、`use cache` でキャッシュ境界を明示する方向へ。App Router の「デフォルト非キャッシュ＋必要箇所だけ opt-in」設計が推奨化し、revalidate 戦略の単純化に効く。
 - **Tailwind v4 の CSS-first 設定が定着、`@theme` トークン共有が実務標準に**：`tailwind.config.js` を捨て CSS の `@theme` にトークン集約する構成が普及し、アプリ・LP・バナーの `tokens.css` 単一参照（07-02 の Kana 連携）が業界的にも自然な形に。コンテナクエリ（`@container`／`cqw`）でコンポーネント単位レスポンシブが本格実用。
 - **Server Actions ＋ `useActionState` 中心のフォーム設計が主流化**：フォーム送信を Server Action に寄せ、`useActionState`/`useFormStatus` で pending・エラーを扱う型が定着。422 フィールドエラーのマッピング（07-01/07-07）を Server Action の返り値型で通す設計が、RHF 併用も含めて整理されつつある。
+### 2026-08-03
+- **Turbopack の本番ビルド安定化で webpack からの移行が本格化**：dev だけでなく `next build` の Turbopack 対応が実運用水準に達し、大規模ページのビルド時間を実測で短縮。07-07 の bundle-analyzer 予算ゲートは Turbopack でも維持でき、cold ビルド短縮で 07-07（Kuu 側）の CI 高速化と相乗。
+- **Partial Prerendering（PPR）が実用段階へ**：静的シェルを即返しつつ動的部分を `<Suspense>` の穴でストリームする方式が安定し、採用求人一覧のような「枠は静的・件数/絞り込みは動的」画面で初期 LCP を稼げる。07-27 の Cache Components（`use cache`）と組み合わせ「デフォルト静的＋必要箇所だけ動的」の設計が既定線に。
+- **shadcn/ui＋Radix のコピペ型コンポーネントがデザインシステム内製の現実解に**：npm 依存でなくソースをリポジトリに取り込む方式で、Tailwind v4 `@theme` トークン（07-27）と直結してブランド適用・改変が自由。LP・採用サイト・管理画面で共通 UI 資産を持ちつつロックインを避ける構成が標準化。
+- **View Transitions API でページ/状態遷移アニメがブラウザネイティブに**：JS ライブラリ無しで滑らかな遷移が書け、React/Next の対応も進行。応募フローのステップ遷移など「体験の質」を軽量に上げられ、07-16 の過剰アニメ作り込み（ゴールドプレーティング懸念）を標準 API で低コスト化。

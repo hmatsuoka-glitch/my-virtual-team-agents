@@ -405,3 +405,9 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **Next.js 15.3+ で `next build --turbopack` が stable 化**：本番ビルドが Webpack 比で高速化し、CI のビルド待ちが縮む。ローカル `vercel build`→`--prebuilt` デプロイ運用と合わせると緊急修正の反映がさらに短縮
 - **Vercel の「BotID」不可視ボット防御が Edge 標準機能に**：フォーム LP のスパム/自動送信対策を、reCAPTCHA 実装を足さずエッジで弾ける流れ。送信 500 系の env 依存（reCAPTCHA secret 未設定事故）を減らせる選択肢として STEP 5 で検討価値
 - **Core Web Vitals 診断が「LCP のサブパート内訳」主流化**：LCP を TTFB/リソース読込遅延/要素描画遅延に分解して原因層（Kaito の Edge・Ren の画像・Nao の予約寸法）を切り分ける診断が PageSpeed 標準に。「遅い」を一括で投げず内訳で差配する運用に接続
+
+### 2026-08-03
+- **Vercel「Instant Rollback / Deployment Retention」の運用が標準ワークフロー化**：本番昇格後の即時切戻しが管理画面・CLI 双方で一段簡便に。サクバズの建設業採用 LP は公開直後に SNS 流入トラフィックが集中するため、STEP 5 の昇格チェックリストに「直前デプロイ ID ピン留め→10 秒ロールバック」を Blue-Green 前提で固定する価値が上がった
+- **画像は AVIF 優先配信が中小 LP でも既定運用に**：`next/image` の自動 AVIF 変換で Hero の LCP が WebP 比でさらに軽量化。建設業クライアントの高精細な現場写真主役 LP で効果が大きく、STEP 5 デプロイ後に DevTools Network で実配信フォーマットが AVIF になっているかを確認項目に追加する
+- **INP が LCP と同格の検索評価指標として定着**：採用 LP のフォーム操作・アコーディオン開閉の INP が順位に直結するため、デプロイ前ゲートの Lighthouse/lighthouserc assertion に「INP 200ms」を LCP・CLS と並べて必須化する運用へ寄せる
+- **Vercel の Remote Cache＋依存解析の高速化で monorepo 複数 LP のビルド待ちがさらに短縮**：同一クライアントの複数 LP 案件を Turborepo Remote Cache で束ねると差分なしデプロイの体感がほぼ即時に。`vercel build`→`--prebuilt` 運用と重ねて緊急修正の反映リードタイムを詰められる

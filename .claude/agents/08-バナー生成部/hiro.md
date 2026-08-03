@@ -425,3 +425,9 @@ const banners = [
 - **sharpの基盤libvips更新でAVIF/WebPエンコードが高速化、深夜バッチのボトルネックが変化**：従来AVIFはエンコードが遅く敬遠されたが、libvips系の最適化で書き出し時間が実用域に。PNG一択だった大量書き出しでもAVIF併産のコスト増が小さくなり、Hiroの3形式同時出力（AVIF/WebP/PNG）を媒体タグで必要分だけ出す設計が回しやすくなった
 - **Playwrightへの移行検討が画像化パイプラインでも話題に**：並列実行・トレース・自動待機の使い勝手からPlaywright採用が業界で増加。ただしバナー画像化の要件（deviceScaleFactor・clip・フォント待機・常駐ブラウザプール）はPuppeteerで完成済みのため、Hiroは移行の是非より「新ヘッドレス既定化＋AVIF拡大」への追従を優先すべき局面
 - 出力前に「サイズ・DPI・ファイル名規則」を自動検証してから納品フォルダへ置くと、規格外納品による差し戻しがゼロになり、Kana/Yunaの確認工数も減る
+
+### 2026-08-03
+- **Chrome for Testingのバージョン固定運用が「ある日出力が変わる」事故予防の定石として定着**：自動更新される通常Chromeでなく、Puppeteerが管理するChrome for Testingのバージョンをpackage.jsonで固定し、CIとローカルで同一バイナリを踏む運用。フォントレンダリング・GPU合成の差で「昨日と同じHTMLなのに数px違う」を根絶でき、`@let-inc/banner-utils`をLP部ren/naoと共有する際も同一バージョンを揃える一報をセットにする
+- **JPEG XLは媒体入稿対応が限定的で、広告バナーは引き続きAVIF/WebP/PNGの3形式が現実解**：JPEG XLはブラウザ・広告媒体側の入稿対応が広がっておらず、Hiroの`emit(buf,['avif','webp','png'])`のAVIF優先＋PNGフォールバック運用が2026年も最適。新形式は「対応が事実上全環境に到達したか」を媒体入稿仕様で確認してから採用判断する慎重運用を維持し、飛びつきによる入稿NGを防ぐ
+- **OGP/LCP画像への`fetchpriority=\"high\"`指定が浸透、LP部OGP生成でも配慮対象に**：ファーストビューの主画像に優先取得ヒントを付けると表示が早まるため、LP部へ共有するHero screenshot経由のOGP生成ロジックでも「OGP画像自体の容量最適化＋priority hints前提」を織り込む。バナー本体は静止画入稿で無関係だが、OGP併用案件では容量とLCPの両にらみが要る
+- **Retina 3x需要の頭打ちで「媒体別deviceScaleFactor上限を容量から逆算」する設計がより実利的に**：端末の実DPRが2〜3で頭打ちのなか、scale3は容量だけ膨らみ実機差が小さい。`compression-profile.json`の媒体別scale上限（LINE等倍〜1.5倍/IG・Indeed2倍）を容量規定から逆算する既存運用が、AVIF併産で容量に余裕が出ても「無闇にscaleを上げない」判断軸として引き続き効く

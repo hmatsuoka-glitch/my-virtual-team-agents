@@ -637,3 +637,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **Tailwind CSS v4 の CSS-first 設定（`@theme` でトークン定義）が定着**：`tailwind.config.js` を廃して CSS 側にトークンを寄せる構成が主流化。Hana の tokens.json → `@theme` 注入に一本化でき、任意値 `[#hex]` 直書き禁止の運用とも相性が良い
 - **View Transitions API（SPA/MPA 両対応）がブラウザ標準化**：ページ・要素遷移のアニメを JS 最小で実装可能に。Framer Motion 依存を一部置換でき、共通アニメユーティリティに `::view-transition` を加えると First Load JS の削減にもつながる
 - **Next.js 15.3+ の `next build --turbopack` が stable 化**：本番ビルドも高速化し、開発の Turbopack と本番の挙動差が縮む。Kaito のデプロイ側と Node メジャー固定＋Turbopack ビルドを揃えると「CI 緑・本番だけ落ちる」差分をさらに減らせる
+
+### 2026-08-03
+- **CSS `text-wrap: balance / pretty` が見出し・本文の折返し最適化に実務投入**：見出しの孤立行や不格好な折返しを CSS だけで整えられ、kotone の改行位置指定（`<wbr>`）を一部 CSS で代替可能。SP 見出しの 1 文字はみ出しを実装コストほぼゼロで防げる
+- **Server Actions の `allowedOrigins`／CSRF 強化が実装必須項目に**：フォーム付き採用 LP で本番オリジン制限を設定しないと送信が弾かれる・攻撃面になるため、`next.config` の `serverActions.allowedOrigins` 設定を実装ゲートに追加。プレビュー/本番のドメイン差も含めて登録する
+- **Speculation Rules API（prerender/prefetch）でページ遷移の体感を高速化**：CTA から別ページのフォームへ遷移する構成で遷移先を先読みし体感即時化。UTM 引き継ぎ設計と併せると広告流入 LP の遷移離脱を減らせる
+- **AVIF 優先配信が `next/image` の既定運用に**：建設業クライアントの高精細な現場写真 Hero で、AVIF 自動変換により LCP が WebP 比でさらに軽量化。`images.formats` 設定と Network での実配信フォーマット確認を実装時チェックに組み込む

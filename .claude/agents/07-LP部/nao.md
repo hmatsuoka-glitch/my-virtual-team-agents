@@ -610,3 +610,9 @@ export const HERO = {
 - **Design Tokens の W3C 標準フォーマット（DTCG の `$value`/`$type`）が普及**：Figma→JSON→Tailwind のトークン受け渡しが規格統一の方向に。Hana/Ren との tokens.json 連携を DTCG スキーマ準拠に寄せると、ツール間の変換ロスと手転記を減らせる
 - **React 19 + Server Components の定着で「SC/CC 区分」が必須設計項目化**：境界をデータ取得の有無で切る設計が業界標準に。設計書のコンポーネント行に「Server/Client 区分＋その理由（fetch 有無・インタラクション有無）」を明示するのがデフォルトになりつつある
 - **shadcn 系「Registry（コピペ設置型）」コンポーネントが主流化**：フルスクラッチ設計でなく Registry 採用前提の流れ。設計書は「どの Registry 部品を採り、どこを案件用に上書きするか」の差分記述で足りるようになり、Button/Input など共有 UI の設計工数を圧縮できる
+
+### 2026-08-03
+- **デザイントークンの「primitive / semantic」2層設計が中小 LP でも標準化**：`blue-500` 等の primitive と `color-cta` 等の semantic を分離し、Hana の tokens.json を primitive 層・設計書で semantic 割当を定義する。Sota の A/B 案やクライアント別ブランド差替が semantic 1 層の付け替えで済み、Ren 実装の変更範囲を最小化できる
+- **React 19 の `useActionState` 前提で Form 仕様を設計する流れ**：pending・エラー・楽観更新が追加ライブラリなしで書けるため、Form 仕様を新フック前提に更新。二重送信防止（冪等キー）と pending 中の disabled も設計項目として常設し、Ren の実装迷いを消す
+- **Next.js の明示的キャッシュ API（`use cache` 等）でデータフロー図に「キャッシュ境界」欄が必要に**：ISR/SSR/CSR の選別に加え、どの fetch をキャッシュするかを設計段階で決める流れ。採用 LP は「基本静的＋フォームのみ動的」の境界を設計書で明示すると Ren の判断迷いが消える
+- **「アクセシブルネーム設計」を部品仕様に前置きする動きが定着**：Mia の a11y ツリー照合（role＋アクセシブルネーム一致）が QA 標準化したため、コンポーネント行に role/aria-label/state を先に定義。div でボタン風を組む実装を設計層でゼロにし、SR 操作不能の差し戻しを予防する

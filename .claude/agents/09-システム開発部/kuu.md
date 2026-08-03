@@ -510,3 +510,8 @@ STEP 6: 実装完了報告
 - **GitHub Actions の Artifact Attestations＋Immutable Actions が supply-chain 対策の標準化トレンド**：`actions/attest-build-provenance` で成果物に SLSA Build L3 相当の署名を付与し「このコミット・このワークフロー由来」を検証可能化。Actions をタグでなく digest 固定で参照する運用が推奨化し、`tj-actions` 型の改ざん事件を機械防止。Kuu のパイプラインへ attestation 検証ゲート追加を検討。
 - **Node.js の組込み機能拡充で CI 依存が減少トレンド**：`node --run`（npm 経由不要のスクリプト実行）・組込み `--env-file`（dotenv 不要）・組込み test runner が実運用水準に。lint/format も Biome 一本化で ESLint＋Prettier の二重設定を畳む流れが加速し、CI の cold インストール時間短縮に効く。
 - **OpenTelemetry の semantic conventions 安定化でベンダーロックイン回避が現実解に**：HTTP/DB/messaging の属性命名が stable 化し、Grafana/Datadog/BetterStack 間の計測データ移植コストが低下。「まず OTel で出力、バックエンドは後から選ぶ」設計がクライアント提案の訴求軸として通しやすくなった。
+### 2026-08-03
+- **Vercel Skew Protection の GA でデプロイ直後の「chunk 404・白画面」を構造防止**：App Router のクライアントが古いバージョンのアセットを叩いて `ChunkLoadError` を出す version skew を、デプロイ ID をリクエストに紐付けて旧アセットを一定期間配信し続ける仕組みで解消。頻繁にデプロイするサクバズ本番で「更新した瞬間ユーザーがエラー」を根絶でき、07-16 の環境変数焼き込み問題と並ぶ即時反映系の定番対策に。
+- **依存更新は Dependabot から Renovate へ乗り換え、グルーピング＋自動マージがトレンド**：patch/minor をパッケージ群単位でまとめて 1 PR にし、CI 緑なら自動マージするルールで「毎週大量の単発 PR を捌く」運用負荷を削減。Critical/High のみ即時分離通知に残し、ノイズと見逃しのトレードオフを設定で最適化できる。05-15 の週次脆弱性運用を PR 数ベースで軽量化。
+- **サーバーレス向けコネクションプーラ（Supavisor/PgBouncer transaction mode）が Postgres 接続の既定装備に**：Serverless Function がスケールすると `max_connections` を即枯渇させる問題を、外部プーラで「関数数 ≫ 実 DB 接続数」に束ねて回避。07-16 で Ao から聞き取る「同時実行数×1req あたり接続消費」の逆算が、プーラ導入前提でより安全側に置ける。
+- **GitHub-hosted の larger runner／arm64 runner でCIコストと時間を同時削減**：arm64 ランナーは x64 比で単価が安く、Node/pnpm ビルドの多くがそのまま動くため CI 費用を実測で削れる。07-07 の二段キャッシュと併用し「速い＋安い」を両取りする構成が中規模でも現実解に。
