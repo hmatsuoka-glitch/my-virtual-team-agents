@@ -643,3 +643,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **Server Actions の `allowedOrigins`／CSRF 強化が実装必須項目に**：フォーム付き採用 LP で本番オリジン制限を設定しないと送信が弾かれる・攻撃面になるため、`next.config` の `serverActions.allowedOrigins` 設定を実装ゲートに追加。プレビュー/本番のドメイン差も含めて登録する
 - **Speculation Rules API（prerender/prefetch）でページ遷移の体感を高速化**：CTA から別ページのフォームへ遷移する構成で遷移先を先読みし体感即時化。UTM 引き継ぎ設計と併せると広告流入 LP の遷移離脱を減らせる
 - **AVIF 優先配信が `next/image` の既定運用に**：建設業クライアントの高精細な現場写真 Hero で、AVIF 自動変換により LCP が WebP 比でさらに軽量化。`images.formats` 設定と Network での実配信フォーマット確認を実装時チェックに組み込む
+
+### 2026-08-05
+- **失敗パターン: Google Fonts を `next/font` でなく `<link>` や CSS `@import` で読み、フォントが render-blocking になって LCP 悪化＋FOUT でガタつく** → 回避策: フォントは `next/font/google`（または local）で self-host＋自動 `size-adjust` を必須にし、外部 `@import`/`<link>` 直読みを禁止する（Critical Rendering Path 2026-07-11参照の実装版）。フォント読込経路で CLS/LCP を同時に改善する
+- **失敗パターン: スクロールアニメを `whileInView` で全要素に付け、ファーストビュー（above the fold）の要素まで `opacity:0` から始まり、ハイドレーション前は真っ白でLCP要素が遅延** → 回避策: 初期表示内の要素はアニメ対象から除外（または初期表示state）し、`whileInView` はスクロールで初めて現れる要素に限定する。LCP要素をアニメ初期非表示にせず、JS失敗時もコンテンツが見える状態をデフォルトにする（2026-06-24のobserver永久非表示と対）
+- **失敗パターン: アコーディオン/タブ/モーダルを `div`＋onClick で組み、キーボード操作・SRで操作不能（role/aria欠落）になり Mia の a11y で差し戻し** → 回避策: 開閉・切替UIは semantic要素（`<button>`/`<details>`）かWAI-ARIA（role/`aria-expanded`/`aria-controls`）で実装し、フォーカス管理（トラップ/復帰 2026-06-26参照）込みで組む。見た目だけのdivボタンを禁止し、Nao の role/state 設計（2026-08-03参照）に沿わせる
+- **失敗パターン: サーバー専用のAPIキー/シークレットに `NEXT_PUBLIC_` を付けてしまい、クライアントバンドルに焼き込まれて漏洩する** → 回避策: シークレットは `NEXT_PUBLIC_` を付けず Server Action/Route Handler 内でのみ参照し、クライアント露出が必要な値だけに prefix を付ける。納品前に本番ビルド成果物を `grep` してシークレット文字列の混入がゼロかを確認する（Kaito の env 漏洩チェック 2026-04-29の実装側版）

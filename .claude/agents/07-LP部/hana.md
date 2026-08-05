@@ -760,3 +760,9 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - **Subgridが全ブラウザBaselineで定着し複雑グリッドの標準に**：`grid-template-columns: subgrid`で子が親のトラックに整列する構造が普及。STEP 4のグリッド抽出（2026-07-01参照のauto-fit判定）で親子グリッドの整列関係を`subgrid`か独立グリッドかで区別しないと、カード内要素の行揃えがRen実装で崩れる。
 - **`interpolate-size: allow-keywords`/`calc-size()`で`height:auto`へのトランジションが可能に**：従来JSやmax-pxハックで実装していたアコーディオン等の高さアニメがCSSネイティブ化。STEP 5で開閉演出を検出したら旧JS実装か新CSS実装可かを判定し（View Transitions、2026-07-27参照と同じ判定軸）、Renへ脱JSの代替提案とフォールバックを添える。
 - **スタイルクエリ（`@container style()`）でトークン連動の分岐が増加**：親のカスタムプロパティ値で子スタイルを切り替える手法が普及し、変数依存グラフ（2026-07-01参照）にスタイルクエリの発火条件を足さないと、`var()`直値化と同じくRen実装でテーマ連動が死ぬ。コンテナクエリ（2026-07-01参照）のサイズ基準版と区別して記録する。
+
+### 2026-08-05
+- **（よくある失敗）font-familyだけ採取し、Webフォントのライセンス（Web埋め込み・再配布可否）を確認せずRenに実装させる**：有料フォントや埋め込み不可フォントをそのまま実装すると複製LPが規約違反になる。回避策：STEP 3で各フォントの提供元（Google Fonts/Adobe Fonts/自社ホスト/有料）とライセンス種別・Web利用可否を記録し、埋め込み不可の場合は近似のGoogle Fonts代替案をRenへ明記する。
+- **（よくある失敗）:hover/:focus/:active/:disabled等の状態依存スタイルを、初期表示だけ見て採取漏れする**：静止状態だけ抽出するとボタンのホバー色・フォーカスリング・無効化表示が実装で欠落する。回避策：STEP 5でインタラクティブ要素（ボタン・リンク・フォーム）はDevToolsの状態強制（:hov）で各状態のcolor/background/border/transformを採取し、ホバー時の変化（2026-06-23参照のtransition値）とセットで仕様書に記録する。
+- **（よくある失敗）画像の実寸だけ採り、`object-fit`/`aspect-ratio`/`background-size`を落として実装で画像が歪む・トリミング位置がずれる**：コンテナに対する画像の収め方が抜けるとレスポンシブで縦横比が崩れる。回避策：STEP 4で`<img>`・`background-image`はobject-fit（cover/contain）・object-position・aspect-ratio・background-size/positionをセット記録し、Renがコンテナサイズ変化時のトリミング挙動を再現できる状態にする。
+- **（よくある失敗）font-familyのフォールバックスタック（2番目以降）と`font-display`を無視し、1番目だけ採取してWebフォント読込失敗時の見た目・FOIT/FOUTが崩れる**：スタック全体を採らないと未読込時に意図しない代替フォントで表示される。回避策：STEP 3でfont-familyは指定された全スタック（欧文→和文→sans-serif等の順）と`font-display`（swap/optional等）を丸ごと記録し、Renへ「1番目が落ちた時の代替と表示挙動」まで渡す。日本語フォントのサブセット化有無も併記する。

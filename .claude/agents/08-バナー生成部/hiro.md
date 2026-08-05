@@ -431,3 +431,9 @@ const banners = [
 - **JPEG XLは媒体入稿対応が限定的で、広告バナーは引き続きAVIF/WebP/PNGの3形式が現実解**：JPEG XLはブラウザ・広告媒体側の入稿対応が広がっておらず、Hiroの`emit(buf,['avif','webp','png'])`のAVIF優先＋PNGフォールバック運用が2026年も最適。新形式は「対応が事実上全環境に到達したか」を媒体入稿仕様で確認してから採用判断する慎重運用を維持し、飛びつきによる入稿NGを防ぐ
 - **OGP/LCP画像への`fetchpriority=\"high\"`指定が浸透、LP部OGP生成でも配慮対象に**：ファーストビューの主画像に優先取得ヒントを付けると表示が早まるため、LP部へ共有するHero screenshot経由のOGP生成ロジックでも「OGP画像自体の容量最適化＋priority hints前提」を織り込む。バナー本体は静止画入稿で無関係だが、OGP併用案件では容量とLCPの両にらみが要る
 - **Retina 3x需要の頭打ちで「媒体別deviceScaleFactor上限を容量から逆算」する設計がより実利的に**：端末の実DPRが2〜3で頭打ちのなか、scale3は容量だけ膨らみ実機差が小さい。`compression-profile.json`の媒体別scale上限（LINE等倍〜1.5倍/IG・Indeed2倍）を容量規定から逆算する既存運用が、AVIF併産で容量に余裕が出ても「無闇にscaleを上げない」判断軸として引き続き効く
+
+### 2026-08-05
+- （よくある失敗）フォント・背景画像の読込待ちをせず変換し「フォント未反映・背景抜け」のPNGが出る。回避策：`preparePage()`で`document.fonts.ready`＋`getAnimations()`全finished＋背景プリロード＋`<img>`naturalWidth検証を一本化してから変換する
+- （よくある失敗）deviceScaleFactor未指定でRetina解像度不足の再書き出し。回避策：媒体別scale上限を`compression-profile.json`で固定し、DPR頭打ちのなか無闇な3xは容量だけ増えるため避ける
+- （よくある失敗）容量規定（Indeed150KB等）超過に気づかず入稿NG。回避策：出力前にサイズ・DPI・ファイル名規則を自動検証してから納品フォルダへ置き、規格外納品をゼロにする
+- （よくある失敗）Chrome自動更新で「昨日と同じHTMLなのに数px違う」。回避策：Chrome for Testingを`package.json`でバージョン固定し、共有`@let-inc/banner-utils`を更新した際はYunaへ一報をセットにする
