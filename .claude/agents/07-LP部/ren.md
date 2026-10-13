@@ -713,3 +713,8 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **品質チェックポイント「フォームの `name` 属性とサーバー側スキーマのキー一致を1つの型から生成」**：入力欄の `name="tel"` に対しサーバー側が `phone` を受けると、送信は成功して画面は完了になるのに通知メールの電話番号欄が空という、最も気付きにくい不具合になる。フィールド定義を1つの zod スキーマに集約して `name` と検証の両方をそこから生成し、納品前にダミー送信で全項目が通知先に値つきで届くことを確認する。
 - **品質チェックポイント「日付・金額の整形は `Intl` に `locale: ja-JP`・`timeZone: Asia/Tokyo` を明示」**：Vercel のサーバーは UTC で動くため、締切日や「◯月◯日更新」を既定設定の `toLocaleDateString()` で描画すると、SSR 側が前日、クライアント側が当日となって Hydration エラーと表示の日付ずれが同時に起きる。日付・金額の整形ユーティリティを1箇所に集約して locale と timeZone を固定し、コンポーネントからは直接 `Date` を整形しない。
 - **品質チェックポイント「`package-lock.json` をコミットし CI・本番とも `npm ci` でビルド」**：`^` 指定の依存が Preview 作成時と本番ビルド時で別のマイナー版に解決されると、Mia が検査した Preview と本番で挙動が変わり、検証の前提が崩れる。lockfile を必ずコミットし、Vercel の Install Command を `npm ci` に固定して、ロック更新は依存を意図して上げる PR に限定する。
+
+### 2026-10-13
+- **Tailwind の class 並びは手で揃えず `prettier-plugin-tailwindcss` を保存時自動整形に入れ、PR 差分は意味のある変更だけに保つ**：class の並びが人によって違うと saki の PR diff に整形由来の全行差分が混ざる（saki 2026-10-09参照）。導入と同時に1回だけ全体整形のコミットを分離して打ち、以降は差分が出ない状態にする。
+- **Server Action と Zod スキーマのキーは `z.infer` の型を共有し、フォームの `name` は `schema.keyof().options` から生成して打ち間違いを型エラーで潰す**：`name="tel"` と `phone` のズレ（ren 2026-10-09参照）をレビューで見つける運用を、`name={field('phone')}` のヘルパー経由で書くだけにして、存在しないキーはコンパイル時に落ちるようにする。
+- **画像のリサイズは入稿ゲートの目視でなく `sharp-cli` を使った `npm run img` に一本化する**：`sharp-cli -i src/raw/*.{jpg,png} -o public/img -f avif -r 2400` で Hero 用長辺 2400px と AVIF 変換を一括実行し、`.gitignore` で `src/raw/` を除外すれば原本 8MB のコミット（ren 2026-09-02参照）も構造的に防げる。

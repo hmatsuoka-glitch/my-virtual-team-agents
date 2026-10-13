@@ -479,3 +479,8 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **品質チェックポイント「Vercel Functions のリージョンを `hnd1`（東京）に固定」**：未指定だとフォーム送信の Server Action や ISR 再生成がデフォルトの米国東部で動き、日本の求職者は送信のたびに太平洋を往復して数百 ms 遅くなる。STEP 5 のデプロイゲートで `vercel.json` の `regions` が `["hnd1"]` になっていること、本番の応答ヘッダ `x-vercel-id` のリージョン接頭辞が `hnd1` であることを `curl -sI` で確認する。
 - **品質チェックポイント「`metadataBase`・canonical・sitemap.xml のドメインが本番ドメインか」**：複製元ドメインや `*.vercel.app` が `sitemap.xml`・`<link rel="canonical">`・`og:url` に残ると、正規 URL を他ドメインへ指す設定になり検索評価が本番に集まらない。noindex の確認（2026-09-02参照）は検索に載るかしか見ていないため、昇格後の本番 URL で3つの出力値を `curl -s` で取得し、全て本番ドメインの絶対 URL であることを納品条件にする。
 - **品質チェックポイント「昇格直前に1つ前の正常デプロイ ID を控え、昇格後30分は Runtime Logs の 5xx を 0 件で監視」**：alias 付替は成功しても、本番 env や外部 API 依存で初回リクエストだけ 500 になる事故は昇格後に初めて出る。切戻し先のデプロイ ID を納品チェックシートに書いてから昇格し、30分以内に `vercel logs` で 5xx が 0 件であることを確認してから完了報告する。
+
+### 2026-10-13
+- **モノレポ運用の案件は Vercel の Ignored Build Step で「自案件のフォルダに差分がある時だけビルド」にする**：`git diff --quiet HEAD^ HEAD -- lps/<案件名>/ ../../packages/` を Ignored Build Step に設定すると、別案件のコピー修正や共通パッケージ無関係の push でビルドが走らず、ビルド使用量の 70% 閾値管理（2026-09-09参照）を週次の目視でなく設定で抑えられる。共通パッケージ更新時だけ全案件が再ビルドされるので、packages 配下を差分判定に含めるのを忘れない。
+- **複製元の残存文字列検査は、Hana の抽出データから `forbidden.txt`（複製元の社名・ドメイン・電話番号・住所を1行1語）を着手時に自動生成し、`grep -rFf forbidden.txt .next out public` を1コマンドで回す**：案件ごとに grep の語を手で考えると毎回抜けが出る。社名の旧字体・全角ハイフン入り電話番号の揺れも forbidden.txt に併記して生成元を1つにする。
+- **Preview の確認依頼は Slack に URL を貼る手作業をやめ、`vercel deploy` の出力 URL を使う GitHub Actions のコメント投稿に任せ、Kaito は Deployment Protection の bypass 共有だけを担当する**：デプロイ完了→URL 取得→貼り付けの3手が案件本数分発生し、旧 URL を貼る誤爆も起きる。PR コメントは最新 Preview の1件だけを上書き更新させ、常に最新版が1箇所に残る形にする。
