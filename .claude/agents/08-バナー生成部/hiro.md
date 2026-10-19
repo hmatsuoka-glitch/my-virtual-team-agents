@@ -504,3 +504,8 @@ const banners = [
 - **効率化テクニック「ブラウザは1回だけ起動し、サイズごとに `setViewport` を切り替えて同じ page で撮影する」**：HTMLごとに `puppeteer.launch()` し直すと1回あたり1〜2秒の起動時間が枚数分かかる。1つのブラウザを使い回して `page.setViewport({width, height, deviceScaleFactor:2})` と `goto` だけを繰り返せば、20枚規模のバッチで30秒前後の短縮になる。バッチの最後に `browser.close()` を `finally` で必ず呼ぶ。
 - **効率化テクニック「入力HTMLと参照画像のハッシュを保存し、変わっていないファイルは再撮影しない」**：1枚のコピー差し替えで全サイズを撮り直すと、変更のない枚数分の時間が無駄になる。HTML本体と読み込む画像のSHA-256を `.hash.json` に残し、前回と同じものはスキップ、変わったものだけ撮影する。出力の決定性確認（2026-10-09）とは別に、入力側の変更検知として使う。
 - **効率化テクニック「撮影は並列数3〜4に制限して回し、検証（寸法・容量）を同じループ内で流して失敗した枚だけ再撮リストに載せる」**：全部撮ってから検証すると、1枚の失敗で全体をやり直しがちになる。`p-limit(3)` で並列撮影し、`sharp(file).metadata()` と `fs.statSync().size` を撮影直後に実行して、NGの枚だけ `retry.json` に出す。
+
+### 2026-10-19
+- **業界トレンド「Puppeteer 24 系は Chrome for Testing と `chrome-headless-shell` を標準で管理」**：ローカルとサーバーで Chrome の版が違うと、フォントのレンダリングやアンチエイリアスが変わり、同じ HTML でも PNG が一致しなくなる。`package.json` で Puppeteer の版を固定し、`puppeteer browsers install` で入れたブラウザの版をバッチの冒頭でログに残して、決定性確認（2026-10-09）の不一致時に版差を最初に確認できるようにする。
+- **業界トレンド「Meta・TikTok の広告は AVIF／WebP 受け入れが広がる一方、審査・プレビューで PNG／JPEG 推奨のまま」**：プラットフォーム側が形式を受け付けても、プレビューの再圧縮で色や文字の輪郭が変わる事例があるため、入稿用は PNG／JPEG を原本とし、WebP／AVIF は LP 側の掲載用に限定する。納品時にファイル名へ用途（`_ad`／`_lp`）を付けて取り違えを防ぐ。
+- **業界トレンド「Chrome の `captureBeyondViewport` と `optimizeForSpeed` オプション」**：Puppeteer の `page.screenshot()` は `optimizeForSpeed: true` で PNG の圧縮を速くできる反面、容量が大きくなる。容量規定が厳しい媒体向けは、撮影時は速度優先、最終出力は `sharp` や `oxipng` で圧縮、という2段に分けて、撮影時間と容量の両方を満たす。

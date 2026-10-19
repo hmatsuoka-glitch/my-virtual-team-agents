@@ -484,3 +484,8 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **モノレポ運用の案件は Vercel の Ignored Build Step で「自案件のフォルダに差分がある時だけビルド」にする**：`git diff --quiet HEAD^ HEAD -- lps/<案件名>/ ../../packages/` を Ignored Build Step に設定すると、別案件のコピー修正や共通パッケージ無関係の push でビルドが走らず、ビルド使用量の 70% 閾値管理（2026-09-09参照）を週次の目視でなく設定で抑えられる。共通パッケージ更新時だけ全案件が再ビルドされるので、packages 配下を差分判定に含めるのを忘れない。
 - **複製元の残存文字列検査は、Hana の抽出データから `forbidden.txt`（複製元の社名・ドメイン・電話番号・住所を1行1語）を着手時に自動生成し、`grep -rFf forbidden.txt .next out public` を1コマンドで回す**：案件ごとに grep の語を手で考えると毎回抜けが出る。社名の旧字体・全角ハイフン入り電話番号の揺れも forbidden.txt に併記して生成元を1つにする。
 - **Preview の確認依頼は Slack に URL を貼る手作業をやめ、`vercel deploy` の出力 URL を使う GitHub Actions のコメント投稿に任せ、Kaito は Deployment Protection の bypass 共有だけを担当する**：デプロイ完了→URL 取得→貼り付けの3手が案件本数分発生し、旧 URL を貼る誤爆も起きる。PR コメントは最新 Preview の1件だけを上書き更新させ、常に最新版が1箇所に残る形にする。
+
+### 2026-10-19
+- Next.js 16（2025年10月リリース）ではTurbopackが既定のバンドラー、`middleware.ts`は`proxy.ts`への改名が進み、`next lint`コマンドも廃止された：新規LP案件はNext.js 16を前提にCIの lint を ESLint 直接実行に切り替え、既存案件を上げる際は`middleware`で行っていた計測・リダイレクト処理が`proxy.ts`で動くことを昇格前にPreviewで確認する
+- Next.js 16の`use cache`ディレクティブとCache Componentsは、LPの静的部分（Hero・実績）と動的部分（求人件数・募集状況）を同一ページで分けて扱える：求人数の表示を動的にしてページ全体が動的化する（2026-10-02の静的確認参照）のを避ける手段として、動的部分だけをSuspense境界で切り出す構成を標準テンプレに反映する。採用前にRenとビルド出力の○／ƒ表示で確認する
+- Vercelはデプロイ時の既定ランタイムがNode.js 24系に移行しており、`package.json`の`engines`未指定だとローカルとPreviewで実行環境がずれる：案件テンプレに`engines.node`と`.nvmrc`を明記し、昇格前チェックに『Vercelのプロジェクト設定のNode.jsバージョンとローカルが一致しているか』を加える。バージョンの既定値はVercelの公式Changelogで時々確認する

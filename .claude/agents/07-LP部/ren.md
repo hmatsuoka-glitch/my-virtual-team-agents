@@ -718,3 +718,8 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **Tailwind の class 並びは手で揃えず `prettier-plugin-tailwindcss` を保存時自動整形に入れ、PR 差分は意味のある変更だけに保つ**：class の並びが人によって違うと saki の PR diff に整形由来の全行差分が混ざる（saki 2026-10-09参照）。導入と同時に1回だけ全体整形のコミットを分離して打ち、以降は差分が出ない状態にする。
 - **Server Action と Zod スキーマのキーは `z.infer` の型を共有し、フォームの `name` は `schema.keyof().options` から生成して打ち間違いを型エラーで潰す**：`name="tel"` と `phone` のズレ（ren 2026-10-09参照）をレビューで見つける運用を、`name={field('phone')}` のヘルパー経由で書くだけにして、存在しないキーはコンパイル時に落ちるようにする。
 - **画像のリサイズは入稿ゲートの目視でなく `sharp-cli` を使った `npm run img` に一本化する**：`sharp-cli -i src/raw/*.{jpg,png} -o public/img -f avif -r 2400` で Hero 用長辺 2400px と AVIF 変換を一括実行し、`.gitignore` で `src/raw/` を除外すれば原本 8MB のコミット（ren 2026-09-02参照）も構造的に防げる。
+
+### 2026-10-19
+- **業界トレンド「Next.js 16 系で `next build` の既定が Turbopack、`middleware.ts` は `proxy.ts` へ改名の流れ」**：LP のリダイレクトや UTM 引き継ぎを middleware に書いている案件は、アップグレード時に名称変更の影響を受ける。新規案件の骨格では処理を `proxy` 側に寄せる前提で書き、既存案件は `npx @next/codemod@latest` の実行結果を Preview で確認してから本番へ上げる。Kaito の昇格前ゲートに「ビルド警告 deprecated 0件」を足す。
+- **業界トレンド「React 19.2 の `useEffectEvent` と `<Activity>`」**：GA4 のイベント送信や scroll 計測を `useEffect` に入れると、依存配列の都合で再購読が起きて二重発火や取りこぼしが出やすい。送信処理を `useEffectEvent` に切り出して購読は1回に固定し、計測の発火回数が Tsumugi の CTA 一覧表（2026-10-09）と一致することを実機で確認する。
+- **業界トレンド「Tailwind v4 は `@import "tailwindcss"` 1行と `@theme` で構成、色は oklch が既定」**：v3 の `tailwind.config.js` 前提のスニペットをそのまま貼ると、`@tailwind base` が効かず無スタイルで出る。コピー元のコード例の版を確認し、brand 色は Iro の hex を `@theme` に書いて、ビルド後の CSS でブランド色が意図の hex に近いかを Mia のブラウザ検査で確認する。
