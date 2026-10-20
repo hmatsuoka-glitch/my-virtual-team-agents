@@ -842,3 +842,9 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - `animation-timeline: scroll()` / `view()` によるスクロール駆動アニメは、Safari 26（2025年秋）の対応でFirefox以外の主要ブラウザに広がっているため、抽出時に`animation-timeline`と`animation-range`の宣言を走査対象に追加する：従来のIntersectionObserver＋JS実装と違い、CSSだけでスクロール連動演出が書かれている複製元が増えており、`getAnimations()`でも`ScrollTimeline`として別扱いになるため、duration前提の記録欄では取りこぼす
 - `@scope`（Baseline入り）で書かれたCSSは、セレクタの詳細度が通常のネストと異なり、スコープ境界（`to (...)`）で効かなくなる範囲がある：複製元に`@scope`があれば、仕様書にはスコープ根・下限セレクタ・対象要素の3点を組で記録し、Renが通常のクラス指定に落とす際に詳細度が逆転しないよう、computed値との照合を必須にする
 - CSSの`if()`関数・`sibling-index()`・`corner-shape`（スーパー楕円の角）など2025年にChrome系から入った新機能は、他ブラウザで未対応の期間が長い：複製元が使っている場合は『宣言値』と『Safari／Firefoxでの実描画（フォールバック値）』を両方仕様書に残し、どちらを実装の正とするかをMiaの検証マトリクスと合意してから渡す
+
+### 2026-10-20
+- 抽出用のJavaScript（`getComputedStyle`でのCSS変数ダンプ、`document.getAnimations()`、`document.fonts`の列挙）はDevToolsのSourcesパネルにあるSnippetsに保存し、対象サイトを開いてCtrl+Enterで実行する：毎回コンソールに貼り直す手間がなく、全案件で同じ手順の抽出になるので抽出漏れの差も出にくい。
+- 抽出結果は`copy(JSON.stringify(result, null, 2))`でクリップボードに出し、JSONから仕様書のMarkdown表を自動生成するスクリプトに通す：値を手で転記するとHEXや余白の写し間違いが起きるが、JSON経由なら数値はそのままで仕様書が出来上がり、実装側のtokens.jsonとの照合にも使える。
+- 初回の全体把握にはDevToolsの「CSS Overview」を先に走らせ、使用色・フォント・未使用宣言・コントラスト不足の一覧を出してから詳細を抽出する：全体像を最初に掴むと、細部の調査を主要な色・フォント・余白に絞れ、見落としやすいマイナーな色やフォントも一覧で気づける。
+- 元サイトの外部CSS・画像・フォントは調査中に何度も取りに行かず、DevToolsのNetworkパネルでHARを保存し、Local Overridesで検証用の変更を重ねる：再読み込みのたびに状態が変わる元サイトでも、手元の保存済みデータで再現と確認ができ、抽出のやり直しが減る。

@@ -723,3 +723,8 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **業界トレンド「Next.js 16 系で `next build` の既定が Turbopack、`middleware.ts` は `proxy.ts` へ改名の流れ」**：LP のリダイレクトや UTM 引き継ぎを middleware に書いている案件は、アップグレード時に名称変更の影響を受ける。新規案件の骨格では処理を `proxy` 側に寄せる前提で書き、既存案件は `npx @next/codemod@latest` の実行結果を Preview で確認してから本番へ上げる。Kaito の昇格前ゲートに「ビルド警告 deprecated 0件」を足す。
 - **業界トレンド「React 19.2 の `useEffectEvent` と `<Activity>`」**：GA4 のイベント送信や scroll 計測を `useEffect` に入れると、依存配列の都合で再購読が起きて二重発火や取りこぼしが出やすい。送信処理を `useEffectEvent` に切り出して購読は1回に固定し、計測の発火回数が Tsumugi の CTA 一覧表（2026-10-09）と一致することを実機で確認する。
 - **業界トレンド「Tailwind v4 は `@import "tailwindcss"` 1行と `@theme` で構成、色は oklch が既定」**：v3 の `tailwind.config.js` 前提のスニペットをそのまま貼ると、`@tailwind base` が効かず無スタイルで出る。コピー元のコード例の版を確認し、brand 色は Iro の hex を `@theme` に書いて、ビルド後の CSS でブランド色が意図の hex に近いかを Mia のブラウザ検査で確認する。
+
+### 2026-10-20
+- **セクションの雛形は `plop` で自動生成する（`npx plop section Hero`）**：`.tsx`・props 型・content JSON の読み込み・`data-testid`・Storybook ストーリーを一括で作り、命名と配置のぶれを防ぐ。1セクションの雛形づくりが10分から1分程度になり、12セクションの LP でも空ファイル作成に1時間以上かけずに済む。
+- **Vercel のビルド失敗は手元で潰す：`husky` の pre-push で `tsc --noEmit && eslint --max-warnings 0` を実行する**：型エラーや lint 違反を push してから Vercel のビルドで知ると、通知を待って修正して再 push するまでに1回あたり3〜5分かかり、Mia の QA 待ちも止まる。手元で15秒ほどで落とせば、Preview は常に QA 可能な状態で作られる。
+- **Tailwind の任意値（`w-[347px]`）は `grep -oE '\[[0-9.]+px\]' -r src | wc -l` で件数を数え、5件を超えたらスケールへ丸め直す**：複製の過程でピクセル単位の値を貼り続けると、SP と PC で整合しない固定値が積み上がり、Saki の修正時に1箇所直すと別の幅が崩れる。件数を目安にしておけば、レビューで「どこまで丸めるか」を毎回議論せずに済む。

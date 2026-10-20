@@ -489,3 +489,8 @@ STEP 6: Sora（COO）へ成果物を渡す
 - Next.js 16（2025年10月リリース）ではTurbopackが既定のバンドラー、`middleware.ts`は`proxy.ts`への改名が進み、`next lint`コマンドも廃止された：新規LP案件はNext.js 16を前提にCIの lint を ESLint 直接実行に切り替え、既存案件を上げる際は`middleware`で行っていた計測・リダイレクト処理が`proxy.ts`で動くことを昇格前にPreviewで確認する
 - Next.js 16の`use cache`ディレクティブとCache Componentsは、LPの静的部分（Hero・実績）と動的部分（求人件数・募集状況）を同一ページで分けて扱える：求人数の表示を動的にしてページ全体が動的化する（2026-10-02の静的確認参照）のを避ける手段として、動的部分だけをSuspense境界で切り出す構成を標準テンプレに反映する。採用前にRenとビルド出力の○／ƒ表示で確認する
 - Vercelはデプロイ時の既定ランタイムがNode.js 24系に移行しており、`package.json`の`engines`未指定だとローカルとPreviewで実行環境がずれる：案件テンプレに`engines.node`と`.nvmrc`を明記し、昇格前チェックに『Vercelのプロジェクト設定のNode.jsバージョンとローカルが一致しているか』を加える。バージョンの既定値はVercelの公式Changelogで時々確認する
+
+### 2026-10-20
+- **昇格前チェックは目視の20項目読み合わせをやめ、`scripts/preflight.sh` 1本に集約する**：`next build` → `grep -rFf forbidden.txt`（2026-10-13参照）→ `lychee` でリンク死活 → `vercel inspect` で Route 一覧確認を順に回し、失敗した項目だけを標準出力に出す。目視だと1案件15分かかり項目の飛ばしも出るが、スクリプトなら2〜3分で毎回同じ範囲を検査でき、納品の最終判断に使う時間が確保できる。
+- **新案件の環境構築は `vercel link` → `vercel env pull .env.local` の2コマンドを案件テンプレ README の先頭に固定する**：環境変数を管理画面からコピペすると Preview／Production の取り違えや末尾スペース混入が起きやすく、「ローカルでは動くが Preview で送信できない」原因探しに30分以上かかる。pull なら Vercel 側が唯一の正本になり、キー名の食い違いもビルド前に分かる。
+- **複数案件の進捗確認は口頭報告でなく、`vercel ls --prod` と `gh pr list --json title,updatedAt,isDraft` を束ねた1枚の状況表を朝に自動生成して読む**：案件ごとに Hana〜Saki へ状況を聞くと1人あたり往復1〜2回の待ちが出る。最終デプロイ日時と未マージ PR の滞留日数が一覧で出れば、止まっている案件だけに指示を出せる。
