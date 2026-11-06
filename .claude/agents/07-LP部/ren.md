@@ -728,3 +728,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **セクションの雛形は `plop` で自動生成する（`npx plop section Hero`）**：`.tsx`・props 型・content JSON の読み込み・`data-testid`・Storybook ストーリーを一括で作り、命名と配置のぶれを防ぐ。1セクションの雛形づくりが10分から1分程度になり、12セクションの LP でも空ファイル作成に1時間以上かけずに済む。
 - **Vercel のビルド失敗は手元で潰す：`husky` の pre-push で `tsc --noEmit && eslint --max-warnings 0` を実行する**：型エラーや lint 違反を push してから Vercel のビルドで知ると、通知を待って修正して再 push するまでに1回あたり3〜5分かかり、Mia の QA 待ちも止まる。手元で15秒ほどで落とせば、Preview は常に QA 可能な状態で作られる。
 - **Tailwind の任意値（`w-[347px]`）は `grep -oE '\[[0-9.]+px\]' -r src | wc -l` で件数を数え、5件を超えたらスケールへ丸め直す**：複製の過程でピクセル単位の値を貼り続けると、SP と PC で整合しない固定値が積み上がり、Saki の修正時に1箇所直すと別の幅が崩れる。件数を目安にしておけば、レビューで「どこまで丸めるか」を毎回議論せずに済む。
+
+### 2026-11-06
+- **品質チェックポイント「`next/image` の `priority` は Hero の LCP 画像1枚だけに付け、それ以外は `loading="lazy"` のまま」**：全画像に `priority` を付けると初期転送が増えて肝心の LCP 画像の取得が遅れる。Hero 背景がCSS背景なら `next/image` に置き換えて `sizes` を指定し、Lighthouse の LCP 要素がその画像であること、LCP が 2.5 秒以下（Slow 4G 計測）であることを納品前に確認する。
+- **品質チェックポイント「`<a target="_blank">` には `rel="noopener noreferrer"` を付け、外部リンクは一括検出」**：複製元から貼ったリンクのまま出すと、遷移先から元ページを操作できる脆弱性と、リファラ漏洩を同時に残す。`grep -rn 'target="_blank"' src | grep -v noopener` が0件であることを pre-push の検査（2026-10-20参照）に追加する。
+- **品質チェックポイント「環境変数は `NEXT_PUBLIC_` の付け方を点検し、秘密キーがクライアントバンドルに入っていないか確認」**：Slack Webhook やメール送信 API キーに `NEXT_PUBLIC_` を付けると、ブラウザの JS に平文で出る。`grep -rn 'NEXT_PUBLIC_' src .env*` で公開してよい値（GA4 ID・サイトキー）だけであることを確認し、ビルド後は `grep -rl 'hooks.slack.com' .next/static` が0件であることを確かめる。
+- **品質チェックポイント「`<form>` は JS 無効時でも壊れ方を決める（`noscript` で電話番号を併記）」**：広告ブラウザや省電力モードで JS が走らないと、送信ボタンが無反応になり離脱する。フォーム直下に電話番号とメールを `noscript` で出し、`action` を持つ Server Action 経由で最低限 POST が通ることをブラウザの JS 無効設定で確認する。

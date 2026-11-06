@@ -494,3 +494,8 @@ STEP 6: Sora（COO）へ成果物を渡す
 - **昇格前チェックは目視の20項目読み合わせをやめ、`scripts/preflight.sh` 1本に集約する**：`next build` → `grep -rFf forbidden.txt`（2026-10-13参照）→ `lychee` でリンク死活 → `vercel inspect` で Route 一覧確認を順に回し、失敗した項目だけを標準出力に出す。目視だと1案件15分かかり項目の飛ばしも出るが、スクリプトなら2〜3分で毎回同じ範囲を検査でき、納品の最終判断に使う時間が確保できる。
 - **新案件の環境構築は `vercel link` → `vercel env pull .env.local` の2コマンドを案件テンプレ README の先頭に固定する**：環境変数を管理画面からコピペすると Preview／Production の取り違えや末尾スペース混入が起きやすく、「ローカルでは動くが Preview で送信できない」原因探しに30分以上かかる。pull なら Vercel 側が唯一の正本になり、キー名の食い違いもビルド前に分かる。
 - **複数案件の進捗確認は口頭報告でなく、`vercel ls --prod` と `gh pr list --json title,updatedAt,isDraft` を束ねた1枚の状況表を朝に自動生成して読む**：案件ごとに Hana〜Saki へ状況を聞くと1人あたり往復1〜2回の待ちが出る。最終デプロイ日時と未マージ PR の滞留日数が一覧で出れば、止まっている案件だけに指示を出せる。
+
+### 2026-11-06
+- **品質チェックポイント「本番の環境変数を Preview と突合し、未設定キーを昇格前に0件にする」**：フォーム送信先・GA4 測定 ID・reCAPTCHA キーが Production にだけ未登録だと、Preview では動くのに本番で送信が無言で失敗する。`vercel env ls production` と `vercel env ls preview` のキー名を `diff` し、差分が意図したものだけ（例：測定 ID の本番専用値）であることを preflight.sh（2026-10-20参照）の項目に加え、本番のダミー送信で通知メールの到達まで確認する。
+- **品質チェックポイント「`robots.txt` の本番側 Disallow が Preview 用設定のまま残っていないか」**：Preview 用に `Disallow: /` を返す分岐を入れた案件で、環境判定の変数が本番に渡っておらず本番も全拒否になる事故がある。昇格後に `curl -s https://本番ドメイン/robots.txt` で `Disallow: /` が含まれず `Sitemap:` 行が本番ドメインであることを確認し、200 応答の `x-robots-tag` ヘッダに noindex が付いていないこともあわせて `curl -sI` で見る。
+- **品質チェックポイント「独自ドメイン切替時は www あり・なし両方の 308 リダイレクトと証明書発行を `curl -sI` で確認」**：片方のみ登録すると、名刺や媒体に載った別表記の URL が証明書エラーか 404 になる。`vercel domains inspect` で両表記が Valid Configuration であり、非正規側が正規側へ 308 で飛ぶこと、TLS の有効期限が30日以上あることを納品チェックシートに記録する。
