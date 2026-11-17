@@ -872,3 +872,9 @@ Next.js の `/public` ディレクトリ構成を設計する:
 - **Renが骨格生成をSTEP 2で並行するので、色・余白・フォントだけのtokens.json速報版（`v0.1`）を着手から30分以内に渡し、アニメーション・状態変化は`v1.0`で後から渡す**：全部揃ってから渡すとRenが待つことになる。版番号を付けておけば、Renがどの版で実装したか後から照合できる。
 - **Naoへの仕様データには、tokens.json・typography.md・animations.mdに加えて、hover・focus・固定ヘッダー化した後などの状態変化を「コンポーネント名の候補」ごとにまとめた`states.json`を付ける**：状態が仕様にないと、Naoがprops設計で状態をvariantにするか判断できず、実装後にMiaの検証で抜けが見つかって手戻りになる。
 - **Miaが使う比較の基準スクリーンショットは、抽出時に自分が撮って渡す（フォント読み込み完了後・Cookieバナーを閉じた状態・取得日時をファイル名に入れる）**：Miaが後日撮ると元サイトの更新やバナー表示で差分の基準がずれ、実装側に問題がないのに不合格になる。
+
+### 2026-11-17
+- 複製元が数百KBのCSSフレームワークを読み込んでいる場合は、全ルールを読まずDevToolsの「Coverage」パネルで375px・1280pxの2幅でスクロールしながら記録し、実際に使われたルール（緑の行）だけをエクスポートしたJSONから抜き出して抽出対象にする：未使用の宣言を仕様書に書かずに済み、STEP 1の読み込みマップでも「実使用率◯%」を併記できる
+- GSAPで動いているサイトは要素ごとにタイムラインを追わず、コンソールで`ScrollTrigger.getAll().map(t=>({trigger:t.trigger, start:t.start, end:t.end, vars:t.vars}))`と`gsap.globalTimeline.getChildren(true,true,true)`を実行し、全トゥイーンのduration・ease・ScrollTriggerのstart/end・scrubを一括で取り出す：`getAnimations()`（2026-10-13参照）では拾えないJS駆動の演出もSnippetsの1回実行で揃う。gsapがグローバルに公開されていないビルドでは使えないため、その場合はwindow上の変数名を先に確認する
+- Styles パネルで値を変えて「この余白で合うか」を試した結果は手でメモせず、DevToolsの「Changes」パネルで変更前後の差分をコピーして仕様書の検証メモに貼る：どの宣言をいくつに変えたら一致したかが差分形式で残るため、Renへ渡す時に再現手順を書き起こす必要がなくなる
+- Google Fontsは`@font-face`を読み解かず、`<link>`の`fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap`のURLパラメータからfamily・weight・`display`を直接読み取って仕様書に書く：実装側もこのURLをそのまま使えるので、weightの取りこぼしやdisplay指定の違いが起きない。実際に描画に使われたweightは`document.fonts`の結果（2026-10-13参照）と照合する
