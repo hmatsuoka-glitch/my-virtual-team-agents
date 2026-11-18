@@ -751,3 +751,9 @@ npm install swiper           # interaction_analyzer でスライダーが検出�
 - **案件テンプレのパッケージマネージャを pnpm に統一し、複数案件の `node_modules` をグローバルストアのハードリンクで共有する**：LP 案件は依存構成がほぼ同じなのに、npm で案件ごとに install すると毎回数百MBのダウンロードと数分の待ちが出る。pnpm ならストアに既にある版は再取得せず、新案件の初回 install が大幅に短くなる。Vercel 側は `pnpm-lock.yaml` で自動判別されるが、pnpm のバージョン指定方法（`packageManager` フィールド等）は要確認。
 - **開発用に `/dev/sections` ルートを作り、全セクションを全 variant・最長文言・0件データで縦に並べて1画面で確認できるようにする（本番では `notFound()` を返す）**：Storybook を起動せずとも `next dev` のまま SP 幅で全パターンの崩れを一度に見られ、Nao の設計書にある最大文字数・0件時表示（2026-11-11参照）の確認がセクションごとのページ遷移なしで済む。
 - **content JSON は Zod スキーマで検証する `npm run check:content` を pre-commit と CI に入れ、キー欠落・型違い・文字数上限超過をビルド前に落とす**：Kotone や Saki が JSON を直接編集した際にカンマ抜けやキー名の打ち間違いがあると、Vercel ビルドが落ちるか該当セクションが空のまま Preview に出る。エラーはファイル名・キー・期待値を表示させ、Ren に問い合わせなくても編集者が自分で直せる形にする。
+
+### 2026-11-18
+- **よくある失敗「Google Fonts を `<link>` タグで読み込み、フォント差し替え時のちらつきとレイアウトシフトを出す」**：外部 CSS 経由だと読み込み完了まで代替フォントで描画され、日本語見出しの字幅が変わって CLS が悪化する。`next/font/google` でセルフホストし `display: 'swap'` と代替フォントの寸法調整を使う。日本語フォントは subset 指定や `preload` の扱いに制約があるため、指定方法は Next.js 公式ドキュメントで要確認。
+- **よくある失敗「`metadataBase` を設定せず、OGP 画像の URL が相対パスや Preview ドメインのまま出る」**：SNS でLPを共有したときに画像が表示されず、TikTok・Instagram からの導線で第一印象が落ちる。ルート `layout.tsx` に `metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL)` を設定し、本番昇格後に `curl -s 本番URL | grep -o 'og:image" content="[^"]*'` が本番ドメインの絶対URLであることを確認する。
+- **よくある失敗「応募フォームのバリデーションをクライアント側だけで行い、Server Action で値を再検証しない」**：JS 無効環境や直接の POST で必須項目が空の応募や異常に長い文字列が届き、通知メールが崩れる。Server Action 側でも Zod スキーマで同じ規則を検証し、エラーは `useActionState` で項目別に返して入力値を保持したまま表示する。
+- **よくある失敗「FAQ や職種タブの `map` で `key` に配列の index を使い、項目の追加・並べ替えで開閉状態がずれる」**：Saki が FAQ を1件先頭に追加しただけで、開いていた項目が別の質問にずれて表示される。content JSON の各項目に安定した `id`（slug）を持たせて `key` に使い、ESLint の `react/no-array-index-key` を有効にして pre-push で検出する。
